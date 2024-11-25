@@ -93,7 +93,7 @@ services:
   posizioni:
     container_name: posizioni
     build: ./posizioni
-    mem_limit: 12g # Limita la memoria a 2GB
+    # mem_limit: 4G # Limita la memoria a 2GB
     depends_on:
       kafka:
         condition: service_healthy

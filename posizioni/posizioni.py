@@ -8,6 +8,8 @@ import time
 import gpxpy
 import gpxpy.parser
 import sys
+import random
+import uuid
 
 # print("\n\n\n\n\n\n\n\n\n\n\n\n")
 
@@ -45,27 +47,58 @@ p = Producer({"bootstrap.servers": "kafka:9092"})
 # print(f"Coordinate caricate: {len(route_coords)} punti")
 # sys.stdout.flush()
 
+########################################################################################
+# Abbiamo diversi modi per la generazione del percorso la migliore è quella di usare
+# Una via di padova e poi si genera il grafo in un raggio una cosa abbastanza simile è
+# quella di fare la stessa cosa ma con un punto casuale e poi sempre il raggio
+# Eventualmente le altre soluzioni sono quella di passare 4 punti cardinali e quella
+# sarà l'area che verrà presa in considerazione (scomodo e a volte oneroso)
+# La cosa che però è stata abbandonata da subito è quella di prendere tutta la mappa di Padova
+
 # Questo è il caricamento della mappa di Padova intera
 # Molto pesante e sostitto con una mappa più piccola
 
-# G = ox.graph_from_place("Padova, Italy", network_type="bike")
+# G = ox.graph_from_place("Padova, Italy", network_type="walk")
 # # Carica una rete stradale per una zona ristretta
 
-north, south, east, west = 45.420, 45.400, 11.880, 11.860
-G = ox.graph_from_bbox(north, south, east, west, network_type="walk")
+# north, south, east, west = 47.000, 44.400, 12.880, 10.860
+# G = ox.graph_from_bbox(north, south, east, west, network_type="walk")
 
 # Anche se c'è scritto walk va bene comunque dato che bike
 # Trova solo percorsi fatti apposta per biciclette
 
-print("Grafo creato per Padova, bicicletta")
 
-# Definisci i punti di partenza e arrivo
-start = (45.4064, 11.8768)  # Coordinate di esempio
-end = (45.4184, 11.8818)  # Coordinate di esempio
+# bbox = ox.utils_geo.bbox_from_point([45.39,11.87], 500)
+# # Carica la rete stradale per la zona specificata
+# G = ox.graph_from_bbox(*bbox, network_type="walk")
 
-# Trova i nodi più vicini ai punti di partenza e arrivo
-orig_node = ox.distance.nearest_nodes(G, X=start[1], Y=start[0])
-dest_node = ox.distance.nearest_nodes(G, X=end[1], Y=end[0])
+
+# # Genera coordinate casuali entro il range del bbox ma con una distanza minima garantita
+# while True:
+#     start = (random.uniform(bbox[1], bbox[3]), random.uniform(bbox[0], bbox[2]))
+#     end = (random.uniform(bbox[1], bbox[3]), random.uniform(bbox[0], bbox[2]))
+#     min_distance = 1000  # distanza minima in metri
+#     if geodesic(start, end).meters > min_distance:
+#         break
+
+# # Trova i nodi più vicini ai punti di partenza e arrivo
+# orig_node = ox.distance.nearest_nodes(G, X=start[1], Y=start[0])
+# dest_node = ox.distance.nearest_nodes(G, X=end[1], Y=end[0])
+
+address = "Via Roma, Padova, Italy"  # Una via centrale di Padova
+distance = 4000  # 4 kilometri
+G = ox.graph.graph_from_address(
+    address=address,
+    dist=distance,
+    network_type="walk"
+)
+
+# Ottieni i nodi del grafo
+nodes = list(G.nodes)
+
+# Seleziona due nodi casuali come punto di partenza e arrivo
+orig_node = random.choice(nodes)
+dest_node = random.choice(nodes)
 
 # Calcola il percorso più breve
 route = nx.shortest_path(G, orig_node, dest_node, weight="length")
@@ -82,7 +115,8 @@ else:
     def generate_positions(route_coords, speed_kmh, interval_seconds, route_id):
         speed_mps = speed_kmh * 1000 / 3600  # Converti la velocità in metri al secondo
         total_distance = 0
-        position_id = 1  # Inizializza l'id delle posizioni
+        point_id = 1  # Inizializza l'id delle posizioni
+        id = str(uuid.uuid4())  # Genera un id univoco per il percorso
 
         for i in range(len(route_coords) - 1):
             start_point = route_coords[i]
@@ -104,8 +138,8 @@ else:
 
                 # Crea un dizionario JSON
                 new_position = {
-                    "id": position_id,
-                    "route_id": route_id,
+                    "id": id,
+                    "point_id": point_id,
                     "latitude": latitude,
                     "longitude": longitude,
                     "received_at": received_at,
@@ -118,13 +152,13 @@ else:
                 p.flush()
 
                 # Incrementa l'id
-                position_id += 1
+                point_id += 1
 
                 # Aspetta prima di generare la prossima posizione
                 # time.sleep(interval_seconds)
 
     try:
-        generate_positions(route_coords, speed_kmh=15, interval_seconds=20, route_id=1)
+        generate_positions(route_coords, speed_kmh=15, interval_seconds=10, route_id=1)
     except Exception as e:
         print(f"Error sending data: {e}")
         sys.stdout.flush()

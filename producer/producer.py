@@ -2,6 +2,7 @@ from confluent_kafka import Producer
 import json
 import sys
 from datetime import datetime
+import uuid
 
 
 message = []
@@ -23,10 +24,9 @@ p = Producer({"bootstrap.servers": "kafka:9092"})
 
 
 try:
-    id = 1
     for original_message in message:  # Ciclo su tutti i messaggi
         # Crea un messaggio con id e data
-        formatted_message = create_message(id, original_message)
+        formatted_message = create_message(str(uuid.uuid4()), original_message)
 
         print(f"Messaggio inviato: {formatted_message}")
         sys.stdout.flush()
@@ -36,6 +36,5 @@ try:
         p.flush()
 
         # Incrementa l'id per il prossimo messaggio
-        id += 1
 except Exception as e:
     print(f"Error sending data: {e}")
