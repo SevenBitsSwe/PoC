@@ -1,0 +1,92 @@
+services:
+  zookeeper:
+    hostname: zookeeper
+    container_name: zookeeper
+    image: confluentinc/cp-zookeeper:7.6.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - 2181:2181
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    hostname: kafka
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - 29092:29092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CREATE_TOPICS: "mio_topic:6:1"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_ADVERTISED_HOST_NAME: "kafka"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "kafka-broker-api-versions",
+          "--bootstrap-server",
+          "localhost:29092",
+        ]
+      interval: 10s
+      timeout: 2s
+      retries: 3
+
+  kafdrop:
+    container_name: kafdrop
+    image: obsidiandynamics/kafdrop
+    restart: "no"
+    ports:
+      - "9080:9000"
+    environment:
+      KAFKA_BROKERCONNECT: "kafka:9092"
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: "grafana-clickhouse-datasource" # Plugin ClickHouse
+
+  # clickhouse:
+  #   image: bitnami/clickhouse:latest
+  #   # image: yandex/clickhouse-server:latest
+  #   environment:
+  #     CLICKHOUSE_ADMIN_USER: default
+  #     CLICKHOUSE_ADMIN_PASSWORD: pass
+  #     ALLOW_EMPTY_PASSWORD: no
+  #   volumes:
+  #     - ./override.xml:/bitnami/clickhouse/etc/conf.d/override.xml:ro
+  #     # - ./config.xml:/opt/bitnami/clickhouse/etc/config.xml
+  #   container_name: clickhouse
+  #   ports:
+  #     - 8123:8123 # HTTP
+  #     - 9000:9000 # Native
+  
+
+  python-script1:
+    build:
+      context: .
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+
+  pythonflinktry:
+    build:
+      context: .
+      dockerfile: Dockerfile.pyflink
+    depends_on:
+      kafka:
+        condition: service_healthy

@@ -1,0 +1,11 @@
+FROM apache/flink:1.14.0
+# Install Kafka connector dependencies
+
+RUN apt-get update -y && \
+apt-get install -y python3 python3-pip python3-dev && rm -rf /var/lib/apt/lists/*
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
+COPY . .
+
+RUN mkdir -p /opt/flink/usrlib
+RUN wget -P /opt/flink/usrlib https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-kafka_2.12/1.14.0/flink-connector-kafka_2.12-1.14.0.jar
