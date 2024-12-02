@@ -1,54 +1,54 @@
 services:
-  zookeeper:
-    hostname: zookeeper
-    container_name: zookeeper
-    image: confluentinc/cp-zookeeper:7.6.0
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    ports:
-      - 2181:2181
+  #zookeeper:
+  #  hostname: zookeeper
+  #  container_name: zookeeper
+  #  image: confluentinc/cp-zookeeper:7.6.0
+  #  environment:
+  #    ZOOKEEPER_CLIENT_PORT: 2181
+  #    ZOOKEEPER_TICK_TIME: 2000
+  #  ports:
+  #    - 2181:2181
 
-  kafka:
-    image: confluentinc/cp-kafka:7.6.0
-    hostname: kafka
-    container_name: kafka
-    depends_on:
-      - zookeeper
-    ports:
-      - 29092:29092
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_CREATE_TOPICS: "mio_topic:6:1"
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_ADVERTISED_HOST_NAME: "kafka"
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "kafka-broker-api-versions",
-          "--bootstrap-server",
-          "localhost:29092",
-        ]
-      interval: 10s
-      timeout: 2s
-      retries: 3
+  #kafka:
+  #  image: confluentinc/cp-kafka:7.6.0
+  #  hostname: kafka
+  #  container_name: kafka
+  #  depends_on:
+  #    - zookeeper
+  #  ports:
+  #    - 29092:29092
+  #  environment:
+  #    KAFKA_BROKER_ID: 1
+  #    KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+  #    KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+  #    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+  #    KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+  #    KAFKA_CREATE_TOPICS: "mio_topic:6:1"
+  #    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+  #    KAFKA_ADVERTISED_HOST_NAME: "kafka"
+  #  healthcheck:
+  #    test:
+  #      [
+  #        "CMD",
+  #        "kafka-broker-api-versions",
+  #        "--bootstrap-server",
+  #        "localhost:29092",
+  #      ]
+  #    interval: 30s
+  #    timeout: 10s
+  #    retries: 3
 
-  kafdrop:
-    container_name: kafdrop
-    image: obsidiandynamics/kafdrop
-    restart: "no"
-    ports:
-      - "9080:9000"
-    environment:
-      KAFKA_BROKERCONNECT: "kafka:9092"
-    depends_on:
-      kafka:
-        condition: service_healthy
+  #kafdrop:
+  #  container_name: kafdrop
+  #  image: obsidiandynamics/kafdrop
+  #  restart: "no"
+  #  ports:
+  #    - "9080:9000"
+  #  environment:
+  #    KAFKA_BROKERCONNECT: "kafka:9092"
+  #  depends_on:
+  #    kafka:
+  #      condition: service_healthy
 
   grafana:
     container_name: grafana
@@ -74,26 +74,32 @@ services:
       - 8123:8123 # HTTP
       - 9000:9000 # Native
 
-  producer:
-    container_name: producer
-    build: ./producer
+  table:
+    container_name: table
+    build: ./table
     depends_on:
-      kafka:
-        condition: service_healthy
+      - clickhouse
+    #  kafka:
+    #    condition: service_healthy
+
+  #producer:
+  #  container_name: producer
+  #  build: ./producer
+  #  depends_on:
+  #    kafka:
+  #      condition: service_healthy
 
   # consumer:
   #   container_name: consumer
   #   build: ./consumer
   #   depends_on:
-  #     - kafka
-  #   # depends_on:
-  #   #   kafka:
-  #   #     condition: service_healthy
+  #     kafka:
+  #       condition: service_healthy
 
-  posizioni:
-    container_name: posizioni
-    build: ./posizioni
-    # mem_limit: 4G # Limita la memoria a 2GB
-    depends_on:
-      kafka:
-        condition: service_healthy
+  #posizioni:
+  #  container_name: posizioni
+  #  build: ./posizioni
+  #  # mem_limit: 4G # Limita la memoria a 2GB
+  #  depends_on:
+  #    kafka:
+  #      condition: service_healthy
