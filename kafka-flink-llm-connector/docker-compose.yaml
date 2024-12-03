@@ -59,20 +59,22 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: admin
       GF_INSTALL_PLUGINS: "grafana-clickhouse-datasource" # Plugin ClickHouse
 
-  # clickhouse:
-  #   image: bitnami/clickhouse:latest
-  #   # image: yandex/clickhouse-server:latest
-  #   environment:
-  #     CLICKHOUSE_ADMIN_USER: default
-  #     CLICKHOUSE_ADMIN_PASSWORD: pass
-  #     ALLOW_EMPTY_PASSWORD: no
-  #   volumes:
-  #     - ./override.xml:/bitnami/clickhouse/etc/conf.d/override.xml:ro
-  #     # - ./config.xml:/opt/bitnami/clickhouse/etc/config.xml
-  #   container_name: clickhouse
-  #   ports:
-  #     - 8123:8123 # HTTP
-  #     - 9000:9000 # Native
+  clickhouse:
+    image: bitnami/clickhouse:latest
+    # image: yandex/clickhouse-server:latest
+    environment:
+      CLICKHOUSE_ADMIN_USER: default
+      CLICKHOUSE_ADMIN_PASSWORD: pass
+      ALLOW_EMPTY_PASSWORD: no
+    volumes:
+        
+       - ./init.sh:/docker-entrypoint-initdb.d/init.sh
+    #   #- ./override.xml:/bitnami/clickhouse/etc/conf.d/override.xml:ro
+    #   #- ./config.xml:/opt/bitnami/clickhouse/etc/config.xml
+    # container_name: clickhouse
+    ports:
+      - 8123:8123 # HTTP
+      - 9000:9000 # Native
   
 
   python-script1:
@@ -83,10 +85,14 @@ services:
         condition: service_healthy
 
 
-  pythonflinktry:
-    build:
+  flink:
+    container_name: flink
+    # volumes:
+    #   - ./flink/.env:/app/.env
+    build: 
       context: .
-      dockerfile: Dockerfile.pyflink
+      dockerfile: Dockerfile.pyflink2
     depends_on:
       kafka:
         condition: service_healthy
+
