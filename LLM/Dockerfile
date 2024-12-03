@@ -17,4 +17,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . /app
 
 # Comando predefinito per avviare l'applicazione
-CMD ["python", "populate_db.py"]
+CMD ["python", "interrogator.py"]
