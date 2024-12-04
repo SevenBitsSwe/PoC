@@ -92,7 +92,7 @@ print("Tabelle create con successo.")
 # Inserimento di dati nella tabella utente
 client.command('''
 INSERT INTO default.utente (id, nome, cognome, email, genere, data_nascita, stato_civile, lon, lat, timestamp_rilevamento) VALUES
-(1, 'Mario', 'Rossi', 'mario.rossi@example.com', 'M', '1985-05-15', 'Single', 12.4924, 41.8902, now());
+(1, 'Francesco', 'Marchi', 'francesco.marchi@example.com', 'M', '1989-09-12', 'Single', 12.4924, 41.8902, now());
 ''')
 
 # Inserimento di dati nella tabella punto_interesse
@@ -101,7 +101,7 @@ INSERT INTO default.punto_interesse (id, nome, lon, lat, indirizzo) VALUES
 (1, 'Caffetteria Roma', 12.4930, 41.8905, 'Via Cavour 1, Roma'),
 (2, 'Museo Romano', 12.4927, 41.8899, 'Piazza Venezia 2, Roma'),
 (3, 'Ristorante La Dolce Vita', 12.4918, 41.8901, 'Via del Corso 10, Roma'),
-(4, 'Hotel Colosseo', 12.4932, 41.8898, 'Via Nazionale 15, Roma'),
+(4, 'Palestra Arena', 12.4932, 41.8898, 'Via Nazionale 15, Roma'),
 (5, 'Galleria di Arte Moderna', 12.4919, 41.8904, 'Via Barberini 7, Roma'),
 (6, 'Parco della Vittoria', 12.4925, 41.8897, 'Viale Trastevere, Roma'),
 (7, 'Teatro Romano', 12.4928, 41.8903, 'Piazza Navona, Roma'),
@@ -116,39 +116,31 @@ INSERT INTO default.affinita (categoria) VALUES
 ('Ristorazione'),
 ('Cultura'),
 ('Natura'),
-('Acquisti'),
-('Sport e attività fisica'),
-('Intrattenimento'),
-('Servizi'),
+('Sport'),
 ('Tecnologia'),
-('Viaggi'),
-('Moda'),
-('Salute e Benessere'),
-('Famiglia e Società');
+('Moda');
 ''')
 
 # Inserimento nella tabella categoria
 client.command('''
 INSERT INTO default.categoria (punto_interesse, categoria) VALUES
 (1, 'Ristorazione'),
-(1, 'Intrattenimento'),
+(1, 'Cultura'),
 (2, 'Cultura'),
 (3, 'Ristorazione'),
-(4, 'Servizi'),
 (5, 'Cultura'),
+(4, 'Sport'),
 (6, 'Natura'),
 (7, 'Cultura'),
 (8, 'Ristorazione'),
 (9, 'Cultura'),
-(10, 'Intrattenimento'),
 (10, 'Cultura');
 ''')
 
 # Inserimento nella tabella interessi
 client.command('''
 INSERT INTO default.interesse (utente, interesse) VALUES
-(1, 'Cultura'),
-(1, 'Intrattenimento');
+(1, 'Cultura');
 ''')
 
 print("Dati inseriti nelle tabelle")

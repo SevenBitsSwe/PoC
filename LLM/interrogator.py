@@ -2,6 +2,8 @@ from langchain_groq import ChatGroq
 import clickhouse_connect
 import json
 from datetime import date, datetime
+from typing import Optional
+from pydantic import BaseModel, Field
 
 
 def get_user_dict(utenti):
@@ -34,25 +36,29 @@ def get_poi_dict(poi):
     return poi_dict
 
 def generate_prompt(utenti, poi_categorie):
-    prompt = "Genera un messaggio pubblicitario personalizzato per l'utente dato scegliendo uno o nessuno dei punti di interesse.\n"
-    prompt += "Utente:\n"
+    prompt = "Genera un messaggio pubblicitario personalizzato per attirare l'utente:\n"
     prompt += str(get_user_dict(utenti)) + "\n"
-    prompt += "Punti di interesse:\n"
+    prompt += '''La pubblicità deve riguardare una sola attività o nessuna tra quelle elencate. Nella scelta considera i seguenti criteri in ordine di importanza:
+1. L'attività deve almeno avere una categoria che corrisponda agli interessi dell'utente.
+2. Se ci sono più corrispondenze, scegli l'attività più vicina in base a Latitudine e Longitudine.
+3. Se non c'è corrispondenza, restituisci 'No match'.'''
+    prompt += "\nQueste sono le attività fra cui puoi scegliere:\n"
     for single_poi in poi_categorie:
-        prompt += str(get_poi_dict(single_poi)) + "\n"
-    prompt += "Genera un solo messaggio di massimo 200 caratteri che publicizzi uno e uno solo oppure nessuno dei punti di interesse dati a seconda della distanza dall'utente e dalla conformità agli interessi dell'utente. Se non scegli nessun punto di interesse restituisci la stringa \'No match\'. Ricorda che puoi publicizzare un solo punto di interesse, non di più e che devi generare un solo messaggio, non di più. La risposta deve tassativamente essere in lingua italiana"
+        prompt += " - " + str(get_poi_dict(single_poi)) + "\n"
+    prompt += '''Il messaggio deve essere lungo fra i 200 e 300 caratteri e deve riguardare al massimo una fra le attività. Il messaggio deve essere uno solo. La risposta deve essere in lingua italiana.'''
     return prompt
 
 
 
 
 llm = ChatGroq(
-    groq_api_key="your-key-here",
-    model="mixtral-8x7b-32768",
-    temperature=0,
+    groq_api_key="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",
+    model="Gemma2-9b-it",
+    temperature=0.6,
     max_tokens=None,
     timeout=None,
     max_retries=2,
+    cache=False,
     # other params...
 )
 
@@ -99,6 +105,18 @@ client.close()
 
 prompt = generate_prompt(utenti, poi_categorie)
 
-ai_msg = llm.invoke(prompt)
+class Messaggio(BaseModel): 
+    '''Message returned by LLM'''
 
-print(ai_msg.content)
+    pubblicita: str = Field(descrition="Messaggio pubblicitario prodotto lungo almeno 200 caratteri")
+    punto_interesse: str = Field(descrition="Nome dell'attività di cui è stato prodotto l'annuncio")
+    #spiegazione: str = Field(description="Spiega perchè hai scelto questo punto di iteresse per l'utente")
+
+structured_model = llm.with_structured_output(Messaggio)
+ai_msg = structured_model.invoke(prompt)
+
+print(prompt)
+
+print(ai_msg.pubblicita)
+print(ai_msg.punto_interesse)
+#print(ai_msg.spiegazione)
