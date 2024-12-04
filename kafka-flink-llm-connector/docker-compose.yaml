@@ -15,6 +15,7 @@ services:
     container_name: kafka
     depends_on:
       - zookeeper
+      - clickhouse
     ports:
       - 29092:29092
     environment:
@@ -37,6 +38,7 @@ services:
       interval: 10s
       timeout: 2s
       retries: 3
+
 
   kafdrop:
     container_name: kafdrop
@@ -67,31 +69,37 @@ services:
       CLICKHOUSE_ADMIN_PASSWORD: pass
       ALLOW_EMPTY_PASSWORD: no
     volumes:
-        
-       - ./init.sh:/docker-entrypoint-initdb.d/init.sh
-    #   #- ./override.xml:/bitnami/clickhouse/etc/conf.d/override.xml:ro
-    #   #- ./config.xml:/opt/bitnami/clickhouse/etc/config.xml
+       - ./StorageData/override.xml:/bitnami/clickhouse/etc/conf.d/override.xml:ro
+       - ./StorageData/init.sh:/docker-entrypoint-initdb.d/init.sh
+       
+      # - ./config.xml:/opt/bitnami/clickhouse/etc/config.xml
     # container_name: clickhouse
     ports:
       - 8123:8123 # HTTP
       - 9000:9000 # Native
   
 
-  python-script1:
-    build:
-      context: .
+  # python-script1:
+  #   build:
+  #     context: .
+  #   depends_on:
+  #     kafka:
+  #       condition: service_healthy
+
+  positionsimulator:
+    container_name: positions
+    build: ./SimulatePositions
+    # mem_limit: 4G # Limita la memoria a 2GB
     depends_on:
       kafka:
         condition: service_healthy
 
-
   flink:
     container_name: flink
-    # volumes:
-    #   - ./flink/.env:/app/.env
-    build: 
-      context: .
-      dockerfile: Dockerfile.pyflink2
+    
+    build: ./FlinkController
+    volumes:
+      - .env:/app/.env
     depends_on:
       kafka:
         condition: service_healthy

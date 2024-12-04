@@ -20,6 +20,7 @@ RUN wget -P /opt/flink/usrlib https://repo1.maven.org/maven2/com/clickhouse/clic
 RUN wget -P /opt/flink/usrlib https://repo1.maven.org/maven2/org/apache/flink/flink-connector-jdbc/3.1.2-1.18/flink-connector-jdbc-3.1.2-1.18.jar
 
 COPY . /app
+
 WORKDIR /app
 
 CMD [ "python", "flinkjob.py" ]

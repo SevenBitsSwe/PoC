@@ -16,8 +16,7 @@ from pyflink.datastream.formats.json import JsonRowDeserializationSchema,JsonRow
 from dbflink import BatchDatabaseUser
 
 
-
-
+from datetime import datetime
 
 import os
 from dotenv import load_dotenv
@@ -46,23 +45,21 @@ streamingEnvironment.set_runtime_mode(RuntimeExecutionMode.STREAMING)
 ####################################Json Schema########################################
 
 row_type_info = Types.ROW_NAMED(
-    ['id', 'coordinates'],  # i campi principali
+    ['id', 'latitude','longitude', 'receptionTime'],  # i campi principali
     [
-        Types.INT(),  # tipo per 'id'
-        Types.ROW_NAMED( 
-            ['latitude','longitude'], # tipo per 'coordinates'
-            [
-                Types.FLOAT(),  # tipo per 'latitude'
-                Types.FLOAT()   # tipo per 'longitude'
-            ]
-        )
+        Types.INT(), 
+        Types.FLOAT(),  
+        Types.FLOAT(),   
+        Types.STRING()
+        
     ]
 )
 
 row_type_info_message = Types.ROW_NAMED(
-    ['id', 'message'],  # i campi principali
+    ['id', 'message','creationTime'],  # i campi principali
     [
         Types.INT(),  # tipo per 'id'
+        Types.STRING(),
         Types.STRING()
     ]
 )
@@ -72,28 +69,41 @@ json_format_deserialize = JsonRowDeserializationSchema.builder().type_info(row_t
 
 streamingEnvironment.add_python_file("dbflink.py")
 
+import logging
+
+# Configura il logger per scrivere su un file
+logging.basicConfig(level=logging.DEBUG)
 
 class MapDataToMessages(MapFunction):
 
     def open(self,runtime):
         ####### Connect to DB service #########
-        self.userDictionary = BatchDatabaseUser().getUser()
+        serviceDb = BatchDatabaseUser()
+        self.userDictionary = serviceDb.getUser()
+        self.pointOfInterest = serviceDb.getPointsOfInterestAsString()#sarebbero da passare le coordinate come parametro
 
         #######Connect to LLM API############
         self.chat = ChatGroq(temperature=0, groq_api_key=GROQ_API_KEY, model_name="mixtral-8x7b-32768")
 
 
+
     def map(self, value):
 
-        messages = [
-        ("system", f"You are a helpful translator. Increment the number {value[1][1]} by 5 and return only the result, no text.")        ]
-        
-        response = self.chat.invoke(messages)
-        variabile = float(response.content.split("\n")[0])  
-
-        value[1][1] = variabile
-    
-        row = Row(id=value[1][1], message=self.userDictionary["nome"])
+        messageToLLM = "Genera un messaggio pubblicitario personalizzato per l'utente dato scegliendo uno o nessuno dei punti di interesse.\n"
+        messageToLLM += "Utente:\n"
+        self.userDictionary.update({"Latitudine" : str(value[1]), "Longitudine" : str(value[2])})
+        messageToLLM += str(self.userDictionary) + "\n"
+        print("icao")
+        messageToLLM += "Punti di interesse:\n"
+        messageToLLM += self.pointOfInterest
+        messageToLLM += '''Genera un solo messaggio di massimo 200 caratteri che publicizzi uno e uno solo oppure nessuno dei punti di interesse 
+                        dati a seconda della distanza dall'utente e dalla conformità agli interessi dell'utente. Se non scegli nessun punto di interesse restituisci
+                        la stringa - No match - . Ricorda che puoi publicizzare un solo punto di interesse, non di più e che devi generare un solo messaggio, non di più.
+                        La risposta deve tassativamente essere in lingua italiana 
+                        '''
+        logging.debug("ciao")
+        responseFromLLM = self.chat.invoke(messageToLLM).content
+        row = Row(id=self.userDictionary["id"], message=responseFromLLM,creationTime=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
         return row
 
@@ -103,7 +113,7 @@ class MapDataToMessages(MapFunction):
 ####################################Consumer########################################
 source = KafkaSource.builder() \
         .set_bootstrap_servers("kafka:9092") \
-        .set_topics("nuovo") \
+        .set_topics("SimulatorPosition") \
         .set_group_id("analysis") \
         .set_value_only_deserializer(json_format_deserialize) \
         .set_property("enable.auto.commit", "true") \
