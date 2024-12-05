@@ -52,7 +52,7 @@ def generate_prompt(utenti, poi_categorie):
 
 
 llm = ChatGroq(
-    groq_api_key="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",
+    groq_api_key="your_api_key_here",
     model="Gemma2-9b-it",
     temperature=0.6,
     max_tokens=None,
