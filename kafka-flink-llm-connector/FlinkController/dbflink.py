@@ -12,12 +12,12 @@ class BatchDatabaseUser():
         )
     
     def getUser(self) -> dict :
-        return self.databaseClient.query('SELECT * FROM user').first_item
+        return self.databaseClient.query('SELECT * FROM nearyou.utente').first_item
     
     def getPointsOfInterestAsString(self) -> str : 
         stringPoI = "" 
 
-        listOfPoI = self.databaseClient.query('SELECT * FROM punto_interesse').result_rows
+        listOfPoI = self.databaseClient.query('SELECT * FROM nearyou.punto_interesse').result_rows
         for singlePoI in listOfPoI:
             dictionaryPoI = {
                 "id": singlePoI[0],

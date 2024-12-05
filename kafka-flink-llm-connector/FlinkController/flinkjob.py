@@ -17,6 +17,7 @@ from dbflink import BatchDatabaseUser
 
 
 from datetime import datetime
+import time
 
 import os
 from dotenv import load_dotenv
@@ -24,14 +25,11 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
 # Carica il file .env
 
-
-
-
 # Recupera la variabile di ambiente
 
 load_dotenv()
 GROQ_API_KEY = os.getenv('PYTHON_PROGRAM_KEY')
-
+time.sleep(11)
 
 
 ####################################Set Up Environment########################################
@@ -56,10 +54,12 @@ row_type_info = Types.ROW_NAMED(
 )
 
 row_type_info_message = Types.ROW_NAMED(
-    ['id', 'message','creationTime'],  # i campi principali
+    ['id', 'message', 'latitude','longitude','creationTime'],  # i campi principali
     [
         Types.INT(),  # tipo per 'id'
         Types.STRING(),
+        Types.FLOAT(),  
+        Types.FLOAT(),
         Types.STRING()
     ]
 )
@@ -67,12 +67,7 @@ json_format_serialize_message = JsonRowSerializationSchema.builder().with_type_i
 
 json_format_deserialize = JsonRowDeserializationSchema.builder().type_info(row_type_info).build()
 
-streamingEnvironment.add_python_file("dbflink.py")
 
-import logging
-
-# Configura il logger per scrivere su un file
-logging.basicConfig(level=logging.DEBUG)
 
 class MapDataToMessages(MapFunction):
 
@@ -101,9 +96,10 @@ class MapDataToMessages(MapFunction):
                         la stringa - No match - . Ricorda che puoi publicizzare un solo punto di interesse, non di più e che devi generare un solo messaggio, non di più.
                         La risposta deve tassativamente essere in lingua italiana 
                         '''
-        logging.debug("ciao")
         responseFromLLM = self.chat.invoke(messageToLLM).content
-        row = Row(id=self.userDictionary["id"], message=responseFromLLM,creationTime=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        var1 = 45.3797493
+        var2 = 11.8525315
+        row = Row(id=self.userDictionary["id"], message=responseFromLLM,latitude=var1,longitude=var2,creationTime=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
         return row
 
@@ -111,10 +107,11 @@ class MapDataToMessages(MapFunction):
 
 
 ####################################Consumer########################################
+
 source = KafkaSource.builder() \
         .set_bootstrap_servers("kafka:9092") \
         .set_topics("SimulatorPosition") \
-        .set_group_id("analysis") \
+        .set_group_id("pyfinkJob") \
         .set_value_only_deserializer(json_format_deserialize) \
         .set_property("enable.auto.commit", "true") \
         .set_property("commit.offsets.on.checkpoint", "true") \

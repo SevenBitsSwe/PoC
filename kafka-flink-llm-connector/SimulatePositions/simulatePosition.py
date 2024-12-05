@@ -67,15 +67,16 @@ else:
                 # Crea un dizionario JSON
                 new_position = {
                     "id": id,
-                    "latitude": latitude,
-                    "longitude": longitude,
+                    "latitude": float(latitude),
+                    "longitude": float(longitude),
                     "received_at": received_at,
                 }
                 print(f"New position: {new_position}")
                 sys.stdout.flush()
 
                 # Invia il messaggio su Kafka
-                p.produce("SimulatorPosition", value=json.dumps(new_position))
+                jsonProva = json.dumps(new_position)
+                p.produce("SimulatorPosition", value=jsonProva.encode("utf-8"))
                 p.flush()
 
                 # Incrementa l'id

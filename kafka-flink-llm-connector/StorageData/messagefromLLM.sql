@@ -3,6 +3,8 @@ CREATE TABLE nearyou.messageTableKafka
 (
     id Int16,
     message String,
+    latitude Float64,
+    longitude Float64,
     creationTime String
 
 ) 
@@ -14,6 +16,8 @@ CREATE TABLE nearyou.messageTable
 (
     id Int16,
     message String,
+    latitude Float64,
+    longitude Float64,
     creationTime String
 )
 ENGINE = MergeTree()
@@ -30,6 +34,8 @@ AS
 SELECT
     id,
     message,
+    latitude,
+    longitude,
     creationTime
 FROM nearyou.messageTableKafka
 

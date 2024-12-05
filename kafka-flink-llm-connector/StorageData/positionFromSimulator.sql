@@ -34,3 +34,7 @@ SELECT
     longitude,
     received_at
 FROM nearyou.positionsKafka;
+
+---SELECT * FROM "nearyou"."positions" ORDER BY received_at DESC LIMIT 2
+
+
