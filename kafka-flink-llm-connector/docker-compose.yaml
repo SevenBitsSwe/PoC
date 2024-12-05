@@ -39,7 +39,6 @@ services:
       timeout: 2s
       retries: 3
 
-
   kafdrop:
     container_name: kafdrop
     image: obsidiandynamics/kafdrop
@@ -60,6 +59,10 @@ services:
     environment:
       GF_SECURITY_ADMIN_PASSWORD: admin
       GF_INSTALL_PLUGINS: "grafana-clickhouse-datasource" # Plugin ClickHouse
+    volumes:
+      - ./grafana/DashboardProv:/etc/grafana/provisioning/dashboards # Configurazione provider dashboard # dashboard.yml
+      - ./grafana/Dashboards:/var/lib/grafana/dashboards # Configurazione dashboard # dashboard.json
+      - ./grafana/DatasourceProv:/etc/grafana/provisioning/datasources # Configurazione datasource # datasources.yml
 
   # clickhouse:
   #   image: bitnami/clickhouse:latest
@@ -71,12 +74,13 @@ services:
   #   volumes:
   #      - ./StorageData/override.xml:/bitnami/clickhouse/etc/conf.d/override.xml:ro
   #      - ./StorageData:/docker-entrypoint-initdb.d/
-       
+
   #     # - ./config.xml:/opt/bitnami/clickhouse/etc/config.xml
   #   # container_name: clickhouse
   #   ports:
   #     - 8123:8123 # HTTP
   #     - 9000:9000 # Native
+
   clickhouse:
     image: clickhouse/clickhouse-server:24.10
     hostname: clickhouse
@@ -87,12 +91,10 @@ services:
     environment:
       CLICKHOUSE_DB: nearyou
       CLICKHOUSE_USER: default
-      CLICKHOUSE_PASSWORD : pass  # Password per l'utente 'myuser'
-      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT : 0  # Abilita la gestione accessi
+      CLICKHOUSE_PASSWORD: pass # Password per l'utente 'myuser'
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 0 # Abilita la gestione accessi
     volumes:
       - ./Storagedata:/docker-entrypoint-initdb.d
-
-
 
   # python-script1:
   #   build:
@@ -111,11 +113,10 @@ services:
 
   flink:
     container_name: flink
-    
+
     build: ./FlinkController
     volumes:
       - .env:/app/.env
     depends_on:
       kafka:
         condition: service_healthy
-
