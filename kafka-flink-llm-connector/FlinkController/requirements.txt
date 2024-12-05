@@ -1,0 +1,5 @@
+apache-flink==1.18.1
+python-dotenv==1.0.1
+langchain-groq
+groq
+clickhouse-connect
