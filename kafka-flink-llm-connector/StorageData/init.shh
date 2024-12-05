@@ -66,7 +66,7 @@ INSERT INTO default.punto_interesse (id, nome, lon, lat, indirizzo) VALUES
 "
 
 clickhouse-client --password="pass" --query="
-CREATE TABLE positions (
+CREAmessagTE TABLE positions (
                            id Int16,
                            latitude Float64,
                            longitude Float64,

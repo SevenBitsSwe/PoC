@@ -61,23 +61,38 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: admin
       GF_INSTALL_PLUGINS: "grafana-clickhouse-datasource" # Plugin ClickHouse
 
-  clickhouse:
-    image: bitnami/clickhouse:latest
-    # image: yandex/clickhouse-server:latest
-    environment:
-      CLICKHOUSE_ADMIN_USER: default
-      CLICKHOUSE_ADMIN_PASSWORD: pass
-      ALLOW_EMPTY_PASSWORD: no
-    volumes:
-       - ./StorageData/override.xml:/bitnami/clickhouse/etc/conf.d/override.xml:ro
-       - ./StorageData/init.sh:/docker-entrypoint-initdb.d/init.sh
+  # clickhouse:
+  #   image: bitnami/clickhouse:latest
+  #   # image: yandex/clickhouse-server:latest
+  #   environment:
+  #     CLICKHOUSE_ADMIN_USER: default
+  #     CLICKHOUSE_ADMIN_PASSWORD: pass
+  #     ALLOW_EMPTY_PASSWORD: no
+  #   volumes:
+  #      - ./StorageData/override.xml:/bitnami/clickhouse/etc/conf.d/override.xml:ro
+  #      - ./StorageData:/docker-entrypoint-initdb.d/
        
-      # - ./config.xml:/opt/bitnami/clickhouse/etc/config.xml
-    # container_name: clickhouse
+  #     # - ./config.xml:/opt/bitnami/clickhouse/etc/config.xml
+  #   # container_name: clickhouse
+  #   ports:
+  #     - 8123:8123 # HTTP
+  #     - 9000:9000 # Native
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.10
+    hostname: clickhouse
+    container_name: clickhouse
     ports:
-      - 8123:8123 # HTTP
-      - 9000:9000 # Native
-  
+      - "8123:8123"
+      - "9000:9000"
+    environment:
+      CLICKHOUSE_DB: nearyou
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD : pass  # Password per l'utente 'myuser'
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT : 0  # Abilita la gestione accessi
+    volumes:
+      - ./Storagedata:/docker-entrypoint-initdb.d
+
+
 
   # python-script1:
   #   build:

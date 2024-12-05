@@ -75,7 +75,7 @@ else:
                 sys.stdout.flush()
 
                 # Invia il messaggio su Kafka
-                p.produce("SimulatorPosition", value=json.dumps(new_position).encode("utf-8"))
+                p.produce("SimulatorPosition", value=json.dumps(new_position))
                 p.flush()
 
                 # Incrementa l'id
