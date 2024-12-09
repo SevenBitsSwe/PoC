@@ -23,15 +23,18 @@ services:
     build: ./table
     depends_on:
       - clickhouse
-    command: ["python", "populate_db.py"]
 
   llm:
     container_name: llm
     build: ./LLM
     depends_on:
-      - clickhouse
       - table
-    command: ["python", "interrogator.py"] # Specifica lo script da eseguire
+
+  position:
+    container_name: position
+    build: ./calcoloPosizione
+    depends_on:
+      - table
 
 volumes:
   clickhouse_data:
