@@ -73,34 +73,44 @@ class MapDataToMessages(MapFunction):
 
     def open(self,runtime):
         ####### Connect to DB service #########
-        serviceDb = BatchDatabaseUser()
-        self.userDictionary = serviceDb.getUser()
-        self.pointOfInterest = serviceDb.getPointsOfInterestAsString()#sarebbero da passare le coordinate come parametro
+        self.serviceDb = BatchDatabaseUser()
+        self.userDictionary = self.serviceDb.getFirstUser()
+        #self.pointOfInterest = self.serviceDb.getPointsOfInterestAsString()#sarebbero da passare le coordinate come parametro
 
         #######Connect to LLM API############
-        self.chat = ChatGroq(temperature=0, groq_api_key=GROQ_API_KEY, model_name="mixtral-8x7b-32768")
+        self.chat = ChatGroq(
+            groq_api_key=GROQ_API_KEY,
+            model="Gemma2-9b-it",
+            temperature=0.6,
+            max_tokens=None,
+            timeout=None,
+            max_retries=2,
+            cache=False,
+            # other params...
+        )
 
-
+    #def selectActivities():
+        
 
     def map(self, value):
 
-        messageToLLM = "Genera un messaggio pubblicitario personalizzato per l'utente dato scegliendo uno o nessuno dei punti di interesse.\n"
-        messageToLLM += "Utente:\n"
-        self.userDictionary.update({"Latitudine" : str(value[1]), "Longitudine" : str(value[2])})
-        messageToLLM += str(self.userDictionary) + "\n"
-        print("icao")
-        messageToLLM += "Punti di interesse:\n"
-        messageToLLM += self.pointOfInterest
-        messageToLLM += '''Genera un solo messaggio di massimo 200 caratteri che publicizzi uno e uno solo oppure nessuno dei punti di interesse 
-                        dati a seconda della distanza dall'utente e dalla conformità agli interessi dell'utente. Se non scegli nessun punto di interesse restituisci
-                        la stringa - No match - . Ricorda che puoi publicizzare un solo punto di interesse, non di più e che devi generare un solo messaggio, non di più.
-                        La risposta deve tassativamente essere in lingua italiana 
-                        '''
-        responseFromLLM = self.chat.invoke(messageToLLM).content
+        activityDictList = self.serviceDb.getActivities(value[1], value[2])
+        prompt = "Genera un messaggio pubblicitario personalizzato per attirare l'utente:\n"
+        prompt += str(self.userDictionary) + "\n"
+        prompt += '''La pubblicità deve riguardare una sola attività o nessuna tra quelle elencate. Nella scelta considera i seguenti criteri in ordine di importanza:
+    1. L'attività deve almeno avere una categoria che corrisponda agli interessi dell'utente.
+    2. Se ci sono più corrispondenze, scegli l'attività più vicina in base a Latitudine e Longitudine.
+    3. Se non c'è corrispondenza, restituisci 'No match'.'''
+        prompt += "\nQueste sono le attività fra cui puoi scegliere:\n"
+        for activityDict in activityDictList:
+            prompt += " - " + str(activityDict) + "\n"
+        prompt += '''Il messaggio deve essere lungo fra i 200 e 300 caratteri e deve riguardare al massimo una fra le attività. Il messaggio deve essere uno solo. La risposta deve essere in lingua italiana.'''
+        print(prompt)
+
+        responseFromLLM = self.chat.invoke(prompt).content
         var1 = 45.3797493
         var2 = 11.8525315
         row = Row(id=self.userDictionary["id"], message=responseFromLLM,latitude=var1,longitude=var2,creationTime=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-
         return row
 
     

@@ -1,4 +1,4 @@
-CREATE TABLE nearyou.punto_interesse(
+CREATE TABLE nearyou.attivita(
        id UInt32,
        nome String,
        lon Float64,
@@ -10,7 +10,7 @@ ORDER BY id;
 
 
 
-INSERT INTO nearyou.punto_interesse (id, nome, lon, lat, indirizzo) VALUES
+INSERT INTO nearyou.attivita (id, nome, lon, lat, indirizzo) VALUES
 (1, 'Caffetteria Roma', 12.4930, 41.8905, 'Via Cavour 1, Roma'),
 (2, 'Museo Romano', 12.4927, 41.8899, 'Piazza Venezia 2, Roma'),
 (3, 'Ristorante La Dolce Vita', 12.4918, 41.8901, 'Via del Corso 10, Roma'),

@@ -11,13 +11,38 @@ class BatchDatabaseUser():
             password='pass'
         )
     
-    def getUser(self) -> dict :
+    def getFirstUser(self) -> dict:
         return self.databaseClient.query('SELECT * FROM nearyou.utente').first_item
+    
+    def getActivities(self, lon, lat) -> list:
+        params = {
+            'lon': lon,
+            'lat': lat
+        }
+
+        query ='''
+        SELECT
+            pi.nome,
+            pi.indirizzo,
+            c.categoria,
+            geoDistance( %(lon)s , %(lat)s  ,pi.lon ,pi.lat)
+        FROM 
+            nearyou.attivita AS pi
+        INNER JOIN
+            nearyou.interesseAttivita AS c 
+        ON
+            pi.id = c.punto_interesse
+        WHERE
+            geoDistance( %(lon)s , %(lat)s  ,pi.lon ,pi.lat) >= 0'''
+        
+        return self.databaseClient.query(query,parameters=params).result_rows
+        
+
     
     def getPointsOfInterestAsString(self) -> str : 
         stringPoI = "" 
 
-        listOfPoI = self.databaseClient.query('SELECT * FROM nearyou.punto_interesse').result_rows
+        listOfPoI = self.databaseClient.query('SELECT * FROM nearyou.attivita').result_rows
         for singlePoI in listOfPoI:
             dictionaryPoI = {
                 "id": singlePoI[0],
