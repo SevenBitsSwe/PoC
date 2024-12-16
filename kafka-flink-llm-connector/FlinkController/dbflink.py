@@ -11,24 +11,47 @@ class BatchDatabaseUser():
             password='pass'
         )
     
-    def getUser(self) -> dict :
-        return self.databaseClient.query('SELECT * FROM nearyou.utente').first_item
+    def getFirstUser(self) -> dict:
+        return self.databaseClient.query('''
+        SELECT
+            u.id,
+            u.nome,
+            u.cognome,
+            u.genere,
+            u.data_nascita,
+            u.stato_civile,
+            i.interesse
+        FROM 
+            nearyou.utente AS u
+        INNER JOIN
+            nearyou.interesseUtente AS i 
+        ON
+            u.id = i.utente
+        ''').first_item
     
-    def getPointsOfInterestAsString(self) -> str : 
-        stringPoI = "" 
+    def getActivities(self, lon, lat) -> list:
+        params = {
+            'lon': lon,
+            'lat': lat
+        }
 
-        listOfPoI = self.databaseClient.query('SELECT * FROM nearyou.punto_interesse').result_rows
-        for singlePoI in listOfPoI:
-            dictionaryPoI = {
-                "id": singlePoI[0],
-                "nome": singlePoI[1],
-                "Longitudine": singlePoI[2],
-                "Latitudine": singlePoI[3],
-                "Indirizzo": singlePoI[4]
-            }
-            stringPoI += str(dictionaryPoI) + "\n"
+        query ='''
+        SELECT
+            a.nome,
+            a.indirizzo,
+            c.categoria,
+            geoDistance( %(lon)s , %(lat)s  ,a.lon ,a.lat) as distanza
+        FROM 
+            nearyou.attivita AS a
+        INNER JOIN
+            nearyou.interesseAttivita AS c 
+        ON
+            a.id = c.punto_interesse
+        WHERE
+            geoDistance( %(lon)s , %(lat)s  ,a.lon ,a.lat) <= 15000
+        '''
         
-        return stringPoI
+        return self.databaseClient.query(query,parameters=params).result_rows
         
 
 

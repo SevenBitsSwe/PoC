@@ -23,6 +23,7 @@ import os
 from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
+from pydantic import BaseModel, Field
 # Carica il file .env
 
 # Recupera la variabile di ambiente
@@ -74,36 +75,77 @@ json_format_deserialize = JsonRowDeserializationSchema.builder()\
 
 class MapDataToMessages(MapFunction):
 
+    class Messaggio(BaseModel): 
+        '''Message returned by LLM'''
+
+        pubblicita: str = Field(descrition="Messaggio pubblicitario prodotto lungo almeno 200 caratteri")
+        attivita: str = Field(descrition="Nome dell'attività di cui è stato prodotto l'annuncio")
+        #spiegazione: str = Field(description="Spiega perchè hai scelto questo punto di iteresse per l'utente")
+
     def open(self,runtime):
         ####### Connect to DB service #########
-        serviceDb = BatchDatabaseUser()
-        self.userDictionary = serviceDb.getUser()
-        self.pointOfInterest = serviceDb.getPointsOfInterestAsString()#sarebbero da passare le coordinate come parametro
+        self.serviceDb = BatchDatabaseUser()
+        self.userDictionary = self.serviceDb.getFirstUser()
+        #self.pointOfInterest = self.serviceDb.getPointsOfInterestAsString()#sarebbero da passare le coordinate come parametro
 
         #######Connect to LLM API############
-        self.chat = ChatGroq(temperature=0, groq_api_key=GROQ_API_KEY, model_name="mixtral-8x7b-32768")
-
-
+        self.chat = ChatGroq(
+            groq_api_key=GROQ_API_KEY,
+            model="Gemma2-9b-it",
+            temperature=0.6,
+            max_tokens=None,
+            timeout=None,
+            max_retries=2,
+            cache=False,
+            # other params...
+        )
+        
 
     def map(self, value):
 
-        messageToLLM = "Genera un messaggio pubblicitario personalizzato per l'utente dato scegliendo uno o nessuno dei punti di interesse.\n"
-        messageToLLM += "Utente:\n"
-        self.userDictionary.update({"Latitudine" : str(value[1]), "Longitudine" : str(value[2])})
-        messageToLLM += str(self.userDictionary) + "\n"
-        print("icao")
-        messageToLLM += "Punti di interesse:\n"
-        messageToLLM += self.pointOfInterest
-        messageToLLM += '''Genera un solo messaggio di massimo 200 caratteri che publicizzi uno e uno solo oppure nessuno dei punti di interesse 
-                        dati a seconda della distanza dall'utente e dalla conformità agli interessi dell'utente. Se non scegli nessun punto di interesse restituisci
-                        la stringa - No match - . Ricorda che puoi publicizzare un solo punto di interesse, non di più e che devi generare un solo messaggio, non di più.
-                        La risposta deve tassativamente essere in lingua italiana 
-                        '''
-        responseFromLLM = self.chat.invoke(messageToLLM).content
-        var1 = 45.3797493
-        var2 = 11.8525315
-        row = Row(id=self.userDictionary["id"], message=responseFromLLM,latitude=var1,longitude=var2,creationTime=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        activityDictList = self.serviceDb.getActivities(value[2], value[1])
+        prompt = "Genera un messaggio pubblicitario personalizzato per attirare l'utente:\n"
+        prompt += str(self.userDictionary) + "\n"
+        prompt += '''La pubblicità deve riguardare una sola attività o nessuna tra quelle elencate. Nella scelta considera i seguenti criteri in ordine di importanza:
+        1. L'attività deve almeno avere una categoria che corrisponda agli interessi dell'utente.
+        2. Se ci sono più corrispondenze, scegli l'attività più vicina in base a Latitudine e Longitudine.
+        3. Se non c'è corrispondenza, restituisci 'No match'.'''
+        prompt += "\nQueste sono le attività fra cui puoi scegliere:\n"
+        for activityDict in activityDictList:
+            prompt += " - " + str(activityDict) + "\n"
+        prompt += '''Il messaggio deve essere lungo fra i 200 e 300 caratteri e deve riguardare al massimo una fra le attività. Il messaggio deve essere uno solo. La risposta deve essere in lingua italiana.'''
+        print(prompt)
+        print("\n")
 
+        # Definizione struttura output LLM
+        structured_model = self.chat.with_structured_output(self.Messaggio)
+
+        # Gestione del rate limit (15000 token al minuto con l'API Groq)
+        while True:
+            try:
+                responseFromLLM = structured_model.invoke(prompt)
+                break  # Esci dal loop se la richiesta ha successo
+            except Exception as e:  # Gestione generica
+                error_message = str(e)
+                if "rate limit reached" in error_message.lower():
+                    retry_after = float(error_message.split("in ")[1].split("s")[0])
+                    print(f"Rate limit raggiunto, attesa di {retry_after} secondi...")
+                    time.sleep(retry_after)
+                else:
+                    raise  # Rilancia l'errore se non è un RateLimitError
+
+        response_dict = responseFromLLM.model_dump() # Coversione necessaria perchè flink non accetta la classe BaseModel di pydantic
+
+        print(response_dict["pubblicita"])
+        print(response_dict["attivita"])
+        print("\n\n")
+
+        row = Row(id=self.userDictionary["id"], 
+                  message=response_dict["pubblicita"],
+                  latitude=value[1],
+                  longitude=value[2],
+                  creationTime=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        )
         return row
 
     
