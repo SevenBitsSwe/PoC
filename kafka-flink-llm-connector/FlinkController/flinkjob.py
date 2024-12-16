@@ -63,10 +63,13 @@ row_type_info_message = Types.ROW_NAMED(
         Types.STRING()
     ]
 )
-json_format_serialize_message = JsonRowSerializationSchema.builder().with_type_info(row_type_info_message).build()
+json_format_serialize_message = JsonRowSerializationSchema.builder()\
+                                .with_type_info(row_type_info_message)\
+                                .build()
 
-json_format_deserialize = JsonRowDeserializationSchema.builder().type_info(row_type_info).build()
-
+json_format_deserialize = JsonRowDeserializationSchema.builder()\
+                          .type_info(row_type_info)\
+                          .build()
 
 
 class MapDataToMessages(MapFunction):
@@ -105,7 +108,6 @@ class MapDataToMessages(MapFunction):
 
     
 
-
 ####################################Consumer########################################
 
 source = KafkaSource.builder() \
@@ -118,8 +120,10 @@ source = KafkaSource.builder() \
         .build()
 #.set_value_only_deserializer(SimpleStringSchema()) \
 datastream = streamingEnvironment.from_source(source,WatermarkStrategy.for_monotonous_timestamps(), "Kafka Source")
+datastream.key_by(lambda x: x[0], key_type=Types.INT())
 
 mappedstream = datastream.map(MapDataToMessages(), output_type=row_type_info_message)
+
 
 
 
@@ -128,9 +132,15 @@ mappedstream = datastream.map(MapDataToMessages(), output_type=row_type_info_mes
 ####################################Producer########################################
 
 
-
 record_serializer = KafkaRecordSerializationSchema.builder() \
                     .set_topic("MessageElaborated") \
+                    .set_key_serialization_schema(JsonRowSerializationSchema.builder()\
+                                .with_type_info(Types.ROW_NAMED(
+                                ['id'],  # i campi principali
+                                [
+                                    Types.INT()
+                                ]))\
+                                .build())\
                     .set_value_serialization_schema(json_format_serialize_message) \
                     .build() 
                     
