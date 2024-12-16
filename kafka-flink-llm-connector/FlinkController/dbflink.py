@@ -12,7 +12,22 @@ class BatchDatabaseUser():
         )
     
     def getFirstUser(self) -> dict:
-        return self.databaseClient.query('SELECT * FROM nearyou.utente').first_item
+        return self.databaseClient.query('''
+        SELECT
+            u.id,
+            u.nome,
+            u.cognome,
+            u.genere,
+            u.data_nascita,
+            u.stato_civile,
+            i.interesse
+        FROM 
+            nearyou.utente AS u
+        INNER JOIN
+            nearyou.interesseUtente AS i 
+        ON
+            u.id = i.utente
+        ''').first_item
     
     def getActivities(self, lon, lat) -> list:
         params = {
@@ -22,38 +37,21 @@ class BatchDatabaseUser():
 
         query ='''
         SELECT
-            pi.nome,
-            pi.indirizzo,
+            a.nome,
+            a.indirizzo,
             c.categoria,
-            geoDistance( %(lon)s , %(lat)s  ,pi.lon ,pi.lat)
+            geoDistance( %(lon)s , %(lat)s  ,a.lon ,a.lat) as distanza
         FROM 
-            nearyou.attivita AS pi
+            nearyou.attivita AS a
         INNER JOIN
             nearyou.interesseAttivita AS c 
         ON
-            pi.id = c.punto_interesse
+            a.id = c.punto_interesse
         WHERE
-            geoDistance( %(lon)s , %(lat)s  ,pi.lon ,pi.lat) >= 0'''
+            geoDistance( %(lon)s , %(lat)s  ,a.lon ,a.lat) <= 15000
+        '''
         
         return self.databaseClient.query(query,parameters=params).result_rows
-        
-
-    
-    def getPointsOfInterestAsString(self) -> str : 
-        stringPoI = "" 
-
-        listOfPoI = self.databaseClient.query('SELECT * FROM nearyou.attivita').result_rows
-        for singlePoI in listOfPoI:
-            dictionaryPoI = {
-                "id": singlePoI[0],
-                "nome": singlePoI[1],
-                "Longitudine": singlePoI[2],
-                "Latitudine": singlePoI[3],
-                "Indirizzo": singlePoI[4]
-            }
-            stringPoI += str(dictionaryPoI) + "\n"
-        
-        return stringPoI
         
 
 

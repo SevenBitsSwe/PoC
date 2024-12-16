@@ -23,6 +23,7 @@ import os
 from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
+from pydantic import BaseModel, Field
 # Carica il file .env
 
 # Recupera la variabile di ambiente
@@ -71,6 +72,13 @@ json_format_deserialize = JsonRowDeserializationSchema.builder().type_info(row_t
 
 class MapDataToMessages(MapFunction):
 
+    class Messaggio(BaseModel): 
+        '''Message returned by LLM'''
+
+        pubblicita: str = Field(descrition="Messaggio pubblicitario prodotto lungo almeno 200 caratteri")
+        attivita: str = Field(descrition="Nome dell'attività di cui è stato prodotto l'annuncio")
+        #spiegazione: str = Field(description="Spiega perchè hai scelto questo punto di iteresse per l'utente")
+
     def open(self,runtime):
         ####### Connect to DB service #########
         self.serviceDb = BatchDatabaseUser()
@@ -88,13 +96,11 @@ class MapDataToMessages(MapFunction):
             cache=False,
             # other params...
         )
-
-    #def selectActivities():
         
 
     def map(self, value):
 
-        activityDictList = self.serviceDb.getActivities(value[1], value[2])
+        activityDictList = self.serviceDb.getActivities(value[2], value[1])
         prompt = "Genera un messaggio pubblicitario personalizzato per attirare l'utente:\n"
         prompt += str(self.userDictionary) + "\n"
         prompt += '''La pubblicità deve riguardare una sola attività o nessuna tra quelle elencate. Nella scelta considera i seguenti criteri in ordine di importanza:
@@ -106,11 +112,39 @@ class MapDataToMessages(MapFunction):
             prompt += " - " + str(activityDict) + "\n"
         prompt += '''Il messaggio deve essere lungo fra i 200 e 300 caratteri e deve riguardare al massimo una fra le attività. Il messaggio deve essere uno solo. La risposta deve essere in lingua italiana.'''
         print(prompt)
+        print("\n")
 
-        responseFromLLM = self.chat.invoke(prompt).content
+        # Definizione struttura output LLM
+        structured_model = self.chat.with_structured_output(self.Messaggio)
+
+        # Gestione del rate limit (15000 token al minuto con l'API Groq)
+        while True:
+            try:
+                responseFromLLM = structured_model.invoke(prompt)
+                break  # Esci dal loop se la richiesta ha successo
+            except Exception as e:  # Gestione generica
+                error_message = str(e)
+                if "rate limit reached" in error_message.lower():
+                    retry_after = float(error_message.split("in ")[1].split("s")[0])
+                    print(f"Rate limit raggiunto, attesa di {retry_after} secondi...")
+                    time.sleep(retry_after)
+                else:
+                    raise  # Rilancia l'errore se non è un RateLimitError
+
+        response_dict = responseFromLLM.model_dump() # Coversione necessaria perchè flink non accetta la classe BaseModel di pydantic
+
+        print(response_dict["pubblicita"])
+        print(response_dict["attivita"])
+        print("\n\n")
+
         var1 = 45.3797493
         var2 = 11.8525315
-        row = Row(id=self.userDictionary["id"], message=responseFromLLM,latitude=var1,longitude=var2,creationTime=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        row = Row(id=self.userDictionary["id"], 
+                  message=response_dict["pubblicita"],
+                  latitude=var1,
+                  longitude=var2,
+                  creationTime=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        )
         return row
 
     
