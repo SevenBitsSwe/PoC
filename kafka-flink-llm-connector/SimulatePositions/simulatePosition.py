@@ -10,7 +10,7 @@ import gpxpy.parser
 import sys
 import random
 import uuid
-
+#TODO riorganizzare in classe percorso+ classe trasmissione+log
 print("\n<producing>")
 sys.stdout.flush()
 
@@ -90,3 +90,13 @@ else:
     except Exception as e:
         print(f"Error sending data: {e}")
         sys.stdout.flush()
+
+class PathSimulator:
+    def __init__(self):
+        pass
+class InputStreamSimulator:
+    def __init__(self):
+        pass
+class KafkaConnection:
+    def __init__(self):
+        pass

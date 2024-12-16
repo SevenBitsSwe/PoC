@@ -26,7 +26,7 @@ from langchain_groq import ChatGroq
 # Carica il file .env
 
 # Recupera la variabile di ambiente
-
+#TODO raggruppare codice in una classe e predisporre injection per mock di test
 load_dotenv()
 GROQ_API_KEY = os.getenv('PYTHON_PROGRAM_KEY')
 time.sleep(11)
@@ -70,15 +70,15 @@ json_format_deserialize = JsonRowDeserializationSchema.builder().type_info(row_t
 
 
 class MapDataToMessages(MapFunction):
+    def __init__(self,LLMConnction,db):
+        self.llm=LLMConnction
+        self.db=db
 
     def open(self,runtime):
         ####### Connect to DB service #########
-        serviceDb = BatchDatabaseUser()
+        serviceDb = self.db
         self.userDictionary = serviceDb.getUser()
         self.pointOfInterest = serviceDb.getPointsOfInterestAsString()#sarebbero da passare le coordinate come parametro
-
-        #######Connect to LLM API############
-        self.chat = ChatGroq(temperature=0, groq_api_key=GROQ_API_KEY, model_name="mixtral-8x7b-32768")
 
 
 
@@ -96,7 +96,7 @@ class MapDataToMessages(MapFunction):
                         la stringa - No match - . Ricorda che puoi publicizzare un solo punto di interesse, non di più e che devi generare un solo messaggio, non di più.
                         La risposta deve tassativamente essere in lingua italiana 
                         '''
-        responseFromLLM = self.chat.invoke(messageToLLM).content
+        responseFromLLM = self.llm.send_request(messageToLLM)
         var1 = 45.3797493
         var2 = 11.8525315
         row = Row(id=self.userDictionary["id"], message=responseFromLLM,latitude=var1,longitude=var2,creationTime=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
@@ -104,7 +104,34 @@ class MapDataToMessages(MapFunction):
         return row
 
     
+class MockDB:
+    def __init__(self,users,points_of_intrst):
+        self.users=users
+        self.points_of_interst=points_of_intrst
+        pass
+    def getUser(self):
+        return self.users
+    def getPointsOfInterestAsString(self):
+        return self.points_of_interst
+class LLMConnection:
+    def __init__(self):
+        pass
+    def send_request(self,request):
+        pass
 
+class GrokConnection(LLMConnection):
+    def __init__(self):
+        #TODO estrarre e generare da config
+        self.chat=ChatGroq(temperature=0, groq_api_key=GROQ_API_KEY, model_name="mixtral-8x7b-32768")
+    def send_request(self,request):
+        return self.chat.invoke(request).content
+class MockConnection(LLMConnection):
+    def __init__(self,request,reply):
+        self.request=request
+        self.reply=reply
+    def send_request(self,request):
+        assert request==self.request
+        return self.reply 
 
 ####################################Consumer########################################
 
@@ -119,7 +146,7 @@ source = KafkaSource.builder() \
 #.set_value_only_deserializer(SimpleStringSchema()) \
 datastream = streamingEnvironment.from_source(source,WatermarkStrategy.for_monotonous_timestamps(), "Kafka Source")
 
-mappedstream = datastream.map(MapDataToMessages(), output_type=row_type_info_message)
+mappedstream = datastream.map(MapDataToMessages(GrokConnection()), output_type=row_type_info_message)
 
 
 
@@ -156,3 +183,4 @@ sink = KafkaSink.builder() \
 mappedstream.sink_to(sink)
 
 streamingEnvironment.execute()
+
