@@ -55,16 +55,13 @@ class BatchDatabaseUser():
         SELECT
             a.nome,
             a.indirizzo,
-            c.categoria,
+            a.tipologia,
+            a.descrizione,
             geoDistance( %(lon)s , %(lat)s  ,a.lon ,a.lat) as distanza
         FROM 
             nearyou.attivita AS a
-        INNER JOIN
-            nearyou.interesseAttivita AS c 
-        ON
-            a.id = c.punto_interesse
         WHERE
-            geoDistance( %(lon)s , %(lat)s  ,a.lon ,a.lat) <= 15000
+            geoDistance( %(lon)s , %(lat)s  ,a.lon ,a.lat) <= 300
         '''
         
         return self.databaseClient.query(query,parameters=params).result_rows
