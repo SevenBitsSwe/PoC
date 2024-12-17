@@ -22,6 +22,7 @@ import time
 import os
 from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.rate_limiters import InMemoryRateLimiter
 from langchain_groq import ChatGroq
 from pydantic import BaseModel, Field
 # Carica il file .env
@@ -89,6 +90,11 @@ class MapDataToMessages(MapFunction):
         #self.pointOfInterest = self.serviceDb.getPointsOfInterestAsString()#sarebbero da passare le coordinate come parametro
 
         #######Connect to LLM API############
+        rate_limiter = InMemoryRateLimiter(
+            requests_per_second=0.065,  # Quante richieste fare al secondo, in pratica qui posso farne una ogni 10s
+            check_every_n_seconds=0.1,  # Controlla ogni 100ms (0.1s) se è possibile inviare la richiesta
+            max_bucket_size=10,  # Dimensione buffer delle richieste
+        )
         self.chat = ChatGroq(
             groq_api_key=GROQ_API_KEY,
             model="Gemma2-9b-it",
@@ -97,6 +103,7 @@ class MapDataToMessages(MapFunction):
             timeout=None,
             max_retries=2,
             cache=False,
+            rate_limiter=rate_limiter,
             # other params...
         )
         
@@ -121,21 +128,23 @@ class MapDataToMessages(MapFunction):
         structured_model = self.chat.with_structured_output(self.Messaggio)
 
         # Gestione del rate limit (15000 token al minuto con l'API Groq)
-        while True:
-            try:
-                responseFromLLM = structured_model.invoke(prompt)
-                break  # Esci dal loop se la richiesta ha successo
-            except Exception as e:  # Gestione generica
-                error_message = str(e)
-                if "rate limit reached" in error_message.lower():
-                    retry_after = float(error_message.split("in ")[1].split("s")[0])
-                    print(f"Rate limit raggiunto, attesa di {retry_after} secondi...")
-                    time.sleep(retry_after)
-                else:
-                    raise  # Rilancia l'errore se non è un RateLimitError
+        # while True:
+        #     try:
+        #         responseFromLLM = structured_model.invoke(prompt)
+        #         break  # Esci dal loop se la richiesta ha successo
+        #     except Exception as e:  # Gestione generica
+        #         error_message = str(e)
+        #         if "rate limit reached" in error_message.lower():
+        #             retry_after = float(error_message.split("in ")[1].split("s")[0])
+        #             print(f"Rate limit raggiunto, attesa di {retry_after} secondi...")
+        #             time.sleep(retry_after)
+        #         else:
+        #             raise  # Rilancia l'errore se non è un RateLimitError
+        responseFromLLM = structured_model.invoke(prompt)
 
         response_dict = responseFromLLM.model_dump() # Coversione necessaria perchè flink non accetta la classe BaseModel di pydantic
 
+        print(time.time())
         print(response_dict["pubblicita"])
         print(response_dict["attivita"])
         print("\n\n")
