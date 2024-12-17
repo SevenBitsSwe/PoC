@@ -8,4 +8,5 @@ ORDER BY (utente, interesse);
 
 
 INSERT INTO nearyou.interesseUtente (utente, interesse) VALUES
-(1, 'Sport');
+(1, 'Sport'),
+(1, 'Natura');
