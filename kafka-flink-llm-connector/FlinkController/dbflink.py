@@ -12,7 +12,7 @@ class BatchDatabaseUser():
         )
     
     def getFirstUser(self) -> dict:
-        return self.databaseClient.query('''
+        utenti = self.databaseClient.query('''
         SELECT
             u.id,
             u.nome,
@@ -27,7 +27,23 @@ class BatchDatabaseUser():
             nearyou.interesseUtente AS i 
         ON
             u.id = i.utente
-        ''').first_item
+        ''').result_rows
+
+        user_dict = {
+            "id" : utenti[0][0],
+            "Nome": utenti[0][1],
+            "Cognome": utenti[0][2],
+            "Genere": utenti[0][3],
+            "Data_nascita": utenti[0][4],
+            "Stato_civile": utenti[0][5],
+        }
+        c = 1
+        for utente in utenti:
+            key = "Interesse"+str(c)
+            user_dict[key] = utente[6]
+            c += 1
+
+        return user_dict
     
     def getActivities(self, lon, lat) -> list:
         params = {
