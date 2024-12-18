@@ -82,8 +82,18 @@ class BatchDatabaseUser():
             return {"lon" : 0, "lat" : 0}
         else: return dizionario.first_item
         
-        
-
+    def getLastMessageCoordinates(self) -> dict: 
+        query= '''
+        SELECT 
+            longitude,
+            latitude
+        FROM nearyou.messageTable
+        ORDER BY creationTime DESC LIMIT 1
+        '''    
+        dizionario = self.databaseClient.query(query)
+        if len(dizionario.result_set) == 0:
+            return {"longitude" : 0, "latitude" : 0}
+        else: return dizionario.first_item
 
 
 

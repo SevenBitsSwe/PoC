@@ -5,7 +5,7 @@ from pyflink.common.watermark_strategy import WatermarkStrategy
 from py4j.java_gateway import JavaObject, get_java_class
 from pyflink.common import Types
 from pyflink.common.types import Row
-from pyflink.datastream.functions import MapFunction
+from pyflink.datastream.functions import MapFunction,FilterFunction
 import json
 from pyflink.common import DeserializationSchema, TypeInformation, typeinfo, SerializationSchema
 from pyflink.datastream.connectors.kafka import KafkaSource,KafkaSink,KafkaRecordSerializationSchema,KafkaOffsetsInitializer
@@ -120,6 +120,7 @@ class MapDataToMessages(MapFunction):
         prompt += "\nQueste sono le attività fra cui puoi scegliere:\n"
         for activityDict in activityDictList:
             prompt += " - " + str(activityDict) + "\n"
+        if len(activityDictList) == 0 : return Row(-1,"error",0,0,"2024-12-18 15:45:23")
         prompt += '''Il messaggio deve essere lungo fra i 200 e 300 caratteri e deve riguardare al massimo una fra le attività. Il messaggio deve essere uno solo. La risposta deve essere in lingua italiana.'''
         print(prompt)
         print("\n")
@@ -146,7 +147,22 @@ class MapDataToMessages(MapFunction):
         return row
 
     
+class FilterMessagesAlreadyDisplayed(FilterFunction):
 
+    def open(self,runtime):
+        ####### Connect to DB service #########
+        self.serviceDb = BatchDatabaseUser()
+
+    #il filter da effettuare è che se dato un id utente (value[0]) e le coordinate attuali sono uguali alle coordinate dell'ultimo messaggio generato
+    def filter(self,value):
+        coordinates = self.serviceDb.getLastMessageCoordinates()
+        print(coordinates)
+        print("\n valori"+ str(value[2]) + " - " + str(value[3]))
+        if (round(coordinates["latitude"],4) == round(value[2],4) and round(coordinates["longitude"],4) == round(value[3],4)) or value[0] == -1:
+            print("Filtered")
+            return False
+        else: 
+            return True
 ####################################Consumer########################################
 
 source = KafkaSource.builder() \
@@ -159,10 +175,11 @@ source = KafkaSource.builder() \
         .build()
 #.set_value_only_deserializer(SimpleStringSchema()) \
 datastream = streamingEnvironment.from_source(source,WatermarkStrategy.for_monotonous_timestamps(), "Kafka Source")
-datastream.key_by(lambda x: x[0], key_type=Types.INT())
+
+datastream = datastream.key_by(lambda x: x[0], key_type=Types.INT())
 
 mappedstream = datastream.map(MapDataToMessages(), output_type=row_type_info_message)
-
+filteredstream = mappedstream.filter(FilterMessagesAlreadyDisplayed())
 
 
 
@@ -202,6 +219,6 @@ sink = KafkaSink.builder() \
 #stream = streamingEnvironment.from_source(source,WatermarkStrategy.for_monotonous_timestamps(), "Kafka Source")
 
 
-mappedstream.sink_to(sink)
+filteredstream.sink_to(sink)
 
 streamingEnvironment.execute()
