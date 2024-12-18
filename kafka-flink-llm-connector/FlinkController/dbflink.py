@@ -65,6 +65,23 @@ class BatchDatabaseUser():
         '''
         
         return self.databaseClient.query(query,parameters=params).result_rows
+    
+    def getActivityCoordinates(self, activityName) -> dict:
+        param = {'nome':activityName}
+        query = '''
+        SELECT 
+            a.lon,
+            a.lat
+        FROM 
+            nearyou.attivita AS a  
+        WHERE
+            a.nome = %(nome)s
+        '''
+        dizionario = self.databaseClient.query(query, parameters=param)
+        if len(dizionario.result_set) == 0:
+            return {"lon" : 0, "lat" : 0}
+        else: return dizionario.first_item
+        
         
 
 
