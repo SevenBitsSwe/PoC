@@ -124,24 +124,9 @@ class MapDataToMessages(MapFunction):
         print(prompt)
         print("\n")
 
-        # Definizione struttura output LLM
+        # Interrogazione LLM
         structured_model = self.chat.with_structured_output(self.Messaggio)
-
-        # Gestione del rate limit (15000 token al minuto con l'API Groq)
-        # while True:
-        #     try:
-        #         responseFromLLM = structured_model.invoke(prompt)
-        #         break  # Esci dal loop se la richiesta ha successo
-        #     except Exception as e:  # Gestione generica
-        #         error_message = str(e)
-        #         if "rate limit reached" in error_message.lower():
-        #             retry_after = float(error_message.split("in ")[1].split("s")[0])
-        #             print(f"Rate limit raggiunto, attesa di {retry_after} secondi...")
-        #             time.sleep(retry_after)
-        #         else:
-        #             raise  # Rilancia l'errore se non è un RateLimitError
         responseFromLLM = structured_model.invoke(prompt)
-
         response_dict = responseFromLLM.model_dump() # Coversione necessaria perchè flink non accetta la classe BaseModel di pydantic
 
         print(time.time())
