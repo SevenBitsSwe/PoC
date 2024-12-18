@@ -79,7 +79,7 @@ class MapDataToMessages(MapFunction):
         '''Message returned by LLM'''
 
         pubblicita: str = Field(descrition="Messaggio pubblicitario prodotto lungo almeno 200 caratteri")
-        attivita: str = Field(descrition="Nome dell'attività di cui è stato prodotto l'annuncio")
+        attivita: str = Field(descrition="Nome della azienda tra quelle proposte di cui è stato prodotto l'annuncio")
         #spiegazione: str = Field(description="Spiega perchè hai scelto questo punto di iteresse per l'utente")
 
     def open(self,runtime):
@@ -140,10 +140,13 @@ class MapDataToMessages(MapFunction):
         print(response_dict["attivita"])
         print("\n\n")
 
+        self.activityCoordinates = self.serviceDb.getActivityCoordinates(response_dict["attivita"])
+
+        print(self.activityCoordinates)
         row = Row(id=self.userDictionary["id"], 
                   message=response_dict["pubblicita"],
-                  latitude=value[1],
-                  longitude=value[2],
+                  latitude=self.activityCoordinates["lat"],
+                  longitude=self.activityCoordinates["lon"],
                   creationTime=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
         return row
