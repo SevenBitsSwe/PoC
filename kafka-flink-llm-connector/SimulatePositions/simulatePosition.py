@@ -76,7 +76,7 @@ else:
 
                 # Invia il messaggio su Kafka
                 jsonProva = json.dumps(new_position)
-                p.produce("SimulatorPosition", value=jsonProva.encode("utf-8"))
+                p.produce("SimulatorPosition",key=json.dumps(new_position["id"]), value=jsonProva.encode("utf-8"))
                 p.flush()
 
                 # Incrementa l'id
