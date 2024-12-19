@@ -1,0 +1,4 @@
+.venv
+.idea/dataSources
+kafka-flink-llm-connector/cache
+.DS_Store

@@ -91,7 +91,7 @@ services:
     environment:
       CLICKHOUSE_DB: nearyou
       CLICKHOUSE_USER: default
-      CLICKHOUSE_PASSWORD: pass # Password per l'utente 'myuser'
+      CLICKHOUSE_PASSWORD: pass # Password per l'utente
       CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 0 # Abilita la gestione accessi
     volumes:
       - ./Storagedata:/docker-entrypoint-initdb.d

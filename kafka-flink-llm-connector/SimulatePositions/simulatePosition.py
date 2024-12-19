@@ -44,7 +44,7 @@ else:
         speed_mps = speed_kmh * 1000 / 3600  # Converti la velocità in metri al secondo
         total_distance = 0
         #id = str(uuid.uuid4())  # Genera un id univoco per il percorso
-        id = 123 #idutenteBase
+        id = 1 #idutenteBase
 
         for i in range(len(route_coords) - 1):
             start_point = route_coords[i]
@@ -76,7 +76,7 @@ else:
 
                 # Invia il messaggio su Kafka
                 jsonProva = json.dumps(new_position)
-                p.produce("SimulatorPosition", value=jsonProva.encode("utf-8"))
+                p.produce("SimulatorPosition",key=json.dumps(new_position["id"]), value=jsonProva.encode("utf-8"))
                 p.flush()
 
                 # Incrementa l'id
