@@ -45,7 +45,7 @@ class TestFlinkController(unittest.TestCase):
     #verifica la gestione di risposte completamente irrecuperabili/ contenenti artefatti/espongono info sensibili
     def test_llm_completely_invalid_reply_formatting(self):
         #TODO definire return per errori
-        cases =[["Utente: ",[]],[" Punti di interesse:",[]],["<script>...",[]],["<image onfail='...'>",[]],["<a href='...' >",[]]]        
+        cases =[["Utente: ",["llm reply contains forbiddent elements"]],[" Punti di interesse:",["llm reply contains forbiddent elements"]],["<script>...",["llm reply contains forbiddent elements"]],["<image onfail='...'>",["llm reply contains forbiddent elements"]],["<a href='...' >",["llm reply contains forbiddent elements"]]]        
         errors_logger=MockErrorLogger()
         mock_db=MockDB()
         coordinates =[]
