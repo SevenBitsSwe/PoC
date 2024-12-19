@@ -24,12 +24,13 @@ class TestFlinkController(unittest.TestCase):
         mock_llm=MockConnection(False,reply)
         mapper=MapDataToMessages(mock_llm,mock_db,errors_logger)
         mapper.open("")#andrebbe passata la runtime ma la funzion non ne fa alcun uso in ogni caso
-        self.assertEqual(errors_logger.read_errors(), False) #TODO definire return per errori
+        mapper.map(coordinates)
+        self.assertEqual(errors_logger.read_errors(), ["llm reply over 400 charachters"])
         #errors_logger.clear_errors()
 
     #verifica la gestione di risposte che non rispettano pienamente il formato ma facilmemte recuperabili
     def test_llm_partially_invalid_reply_formatting(self):
-        cases =[[" - No match ",[]],[" No match -",[]],[" - No match - Matched.....",[]]]#TODO definire return per errori
+        cases =[[" - No match ",["llm reported no match"]],[" No match -",["llm reported no match"]],[" - No match - Matched.....",["llm repoted no match but still geneated text"]]]
         mock_db=MockDB()
         coordinates =[]
         for case in cases:
@@ -37,6 +38,7 @@ class TestFlinkController(unittest.TestCase):
             mock_llm=MockConnection(False,cases[0])
             mapper=MapDataToMessages(mock_llm,mock_db,errors_logger)
             mapper.open("")#andrebbe passata la runtime ma la funzion non ne fa alcun uso in ogni caso
+            mapper.map(coordinates)
             self.assertEqual(errors_logger.read_errors(), cases[1]) 
             errors_logger.clear_errors()
 
@@ -51,6 +53,7 @@ class TestFlinkController(unittest.TestCase):
             mock_llm=MockConnection(False,case[0])
             mapper=MapDataToMessages(mock_llm,mock_db,errors_logger)
             mapper.open("")#andrebbe passata la runtime ma la funzion non ne fa alcun uso in ogni caso
+            mapper.map(coordinates)
             self.assertEqual(errors_logger.read_errors(), case[1]) 
             errors_logger.clear_errors()
 

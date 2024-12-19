@@ -74,6 +74,7 @@ class MapDataToMessages(MapFunction):
         self.llm=LLMConnction
         self.db=db
         self.logger=logger
+        self.filters=["Utente: "," Punti di interesse:","<script>...","<image onfail='...'>","<a href='...' >"]
 
     def open(self,runtime):
         ####### Connect to DB service #########
@@ -98,6 +99,12 @@ class MapDataToMessages(MapFunction):
                         La risposta deve tassativamente essere in lingua italiana 
                         '''
         responseFromLLM = self.llm.send_request(messageToLLM)
+        if len(responseFromLLM)>400:
+            self.logger.log_error("llm reply over 400 charachters")
+        for filter in self.filters:
+            index = responseFromLLM.find(filter)
+            if index!=-1:
+                self.logger.log_error("llm reply contains forbiddent elements")
         var1 = 45.3797493
         var2 = 11.8525315
         row = Row(id=self.userDictionary["id"], message=responseFromLLM,latitude=var1,longitude=var2,creationTime=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
