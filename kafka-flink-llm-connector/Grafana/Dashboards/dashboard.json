@@ -274,7 +274,7 @@
           "editorType": "builder",
           "format": 1,
           "pluginVersion": "4.5.1",
-          "rawSql": "SELECT * FROM \"nearyou\".\"positions\" ORDER BY received_at DESC LIMIT 2",
+          "rawSql": "SELECT * FROM \"nearyou\".\"positions\" ORDER BY received_at DESC LIMIT 2", 
           "refId": "A"
         },
         {

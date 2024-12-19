@@ -31,7 +31,7 @@ from pydantic import BaseModel, Field
 
 load_dotenv()
 GROQ_API_KEY = os.getenv('PYTHON_PROGRAM_KEY')
-time.sleep(11)
+time.sleep(9)
 
 
 ####################################Set Up Environment########################################

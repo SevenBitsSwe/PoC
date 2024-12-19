@@ -39,3 +39,22 @@ SELECT
     creationTime
 FROM nearyou.messageTableKafka
 
+-- SELECT 
+--     m.longitude, 
+--     m.latitude, 
+--     m.message
+-- FROM 
+--     (SELECT * 
+--      FROM "nearyou"."messageTable" 
+--      ORDER BY creationTime DESC 
+--      LIMIT 1) AS m
+-- INNER JOIN 
+--     (SELECT * 
+--      FROM "nearyou"."positions" 
+--      ORDER BY received_at DESC 
+--      LIMIT 1) AS p
+-- ON m.id = p.id
+-- WHERE geoDistance(p.latitude, p.longitude, m.latitude, m.longitude) <= 400;
+
+
+          --"rawSql": "SELECT \n    m.longitude, \n    m.latitude, \n    m.message\nFROM \n    (SELECT * \n     FROM \"nearyou\".\"messageTable\" \n     ORDER BY creationTime DESC \n     LIMIT 1) AS m\nINNER JOIN \n    (SELECT * \n     FROM \"nearyou\".\"positions\" \n     ORDER BY received_at DESC \n     LIMIT 1) AS p\nON m.id = p.id\nWHERE geoDistance(p.latitude, p.longitude, m.latitude, m.longitude) <= 400;",
