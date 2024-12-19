@@ -158,7 +158,7 @@ class FilterMessagesAlreadyDisplayed(FilterFunction):
         coordinates = self.serviceDb.getLastMessageCoordinates()
         print(coordinates)
         print("\n valori"+ str(value[2]) + " - " + str(value[3]))
-        if (round(coordinates["latitude"],4) == round(value[2],4) and round(coordinates["longitude"],4) == round(value[3],4)) or value[0] == -1:
+        if (round(coordinates["latitude"],4) == round(value[2],4) and round(coordinates["longitude"],4) == round(value[3],4)) or value[2] == 0 and value[3]==0:
             print("Filtered")
             return False
         else: 
