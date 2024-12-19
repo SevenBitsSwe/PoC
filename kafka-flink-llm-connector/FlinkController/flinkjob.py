@@ -70,9 +70,10 @@ json_format_deserialize = JsonRowDeserializationSchema.builder().type_info(row_t
 
 
 class MapDataToMessages(MapFunction):
-    def __init__(self,LLMConnction,db):
+    def __init__(self,LLMConnction,db,logger):
         self.llm=LLMConnction
         self.db=db
+        self.logger=logger
 
     def open(self,runtime):
         ####### Connect to DB service #########
@@ -132,7 +133,20 @@ class MockConnection(LLMConnection):
     def send_request(self,request):
         assert request==self.request
         return self.reply 
-
+class ErrorLogger:
+    def __init__(self):
+        pass
+    def log_error(self,error):
+        pass
+class MockErrorLogger:
+    def __init__(self):
+        self.errors=[]
+    def log_error(self,errorr):
+        self.errors+=errorr
+    def read_errors(self):
+        return self.errors
+    def clear_errors(self):
+        self.errors=[]
 ####################################Consumer########################################
 
 source = KafkaSource.builder() \
@@ -146,7 +160,7 @@ source = KafkaSource.builder() \
 #.set_value_only_deserializer(SimpleStringSchema()) \
 datastream = streamingEnvironment.from_source(source,WatermarkStrategy.for_monotonous_timestamps(), "Kafka Source")
 
-mappedstream = datastream.map(MapDataToMessages(GrokConnection()), output_type=row_type_info_message)
+mappedstream = datastream.map(MapDataToMessages(GrokConnection(),BatchDatabaseUser(),ErrorLogger()), output_type=row_type_info_message)
 
 
 

@@ -1,5 +1,5 @@
 import unittest
-import flinkjob
+from flinkjob import *
 class TestFlinkController(unittest.TestCase):
 
     #verifica l'efettiva capacita di connettersi a db ed effettuare query
@@ -20,34 +20,39 @@ class TestFlinkController(unittest.TestCase):
         reply ="A"*400
         coordinates =[]
         mock_db=MockDB()
+        errors_logger=MockErrorLogger()
         mock_llm=MockConnection(False,reply)
-        mapper=MapDataToMessages(mock_llm,mock_db)
+        mapper=MapDataToMessages(mock_llm,mock_db,errors_logger)
         mapper.open("")#andrebbe passata la runtime ma la funzion non ne fa alcun uso in ogni caso
-        self.assertEqual(mapper.map(coordinates), False) #TODO definire return per errori
+        self.assertEqual(errors_logger.read_errors(), False) #TODO definire return per errori
+        #errors_logger.clear_errors()
 
     #verifica la gestione di risposte che non rispettano pienamente il formato ma facilmemte recuperabili
     def test_llm_partially_invalid_reply_formatting(self):
-        replies =[" - No match "," No match -"," - No match - Matched.....",]
+        cases =[[" - No match ",[]],[" No match -",[]],[" - No match - Matched.....",[]]]#TODO definire return per errori
         mock_db=MockDB()
         coordinates =[]
-        for reply in replies:
-            mock_llm=MockConnection(False,reply)
-            mapper=MapDataToMessages(mock_llm,mock_db)
+        for case in cases:
+            errors_logger=MockErrorLogger()
+            mock_llm=MockConnection(False,cases[0])
+            mapper=MapDataToMessages(mock_llm,mock_db,errors_logger)
             mapper.open("")#andrebbe passata la runtime ma la funzion non ne fa alcun uso in ogni caso
-            self.assertEqual(mapper.map(coordinates), False) #TODO definire return per errori
-
+            self.assertEqual(errors_logger.read_errors(), cases[1]) 
+            errors_logger.clear_errors()
 
     #verifica la gestione di risposte completamente irrecuperabili/ contenenti artefatti/espongono info sensibili
     def test_llm_completely_invalid_reply_formatting(self):
-        replies =["Utente: "," Punti di interesse:","<script>...","<image onfail='...'>","<a href='...' >"]
+        #TODO definire return per errori
+        cases =[["Utente: ",[]],[" Punti di interesse:",[]],["<script>...",[]],["<image onfail='...'>",[]],["<a href='...' >",[]]]        
+        errors_logger=MockErrorLogger()
         mock_db=MockDB()
         coordinates =[]
-        for reply in replies:
-            mock_llm=MockConnection(False,reply)
-            mapper=MapDataToMessages(mock_llm,mock_db)
+        for case in cases:
+            mock_llm=MockConnection(False,case[0])
+            mapper=MapDataToMessages(mock_llm,mock_db,errors_logger)
             mapper.open("")#andrebbe passata la runtime ma la funzion non ne fa alcun uso in ogni caso
-            self.assertEqual(mapper.map(coordinates), False) #TODO definire return per errori
-
+            self.assertEqual(errors_logger.read_errors(), case[1]) 
+            errors_logger.clear_errors()
 
 
     #def test_llm_invalid_reply_language(self):
