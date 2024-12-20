@@ -127,7 +127,7 @@
               "longitude": "longitude",
               "mode": "coords"
             },
-            "name": "Layer 2",
+            "name": "Messaggio",
             "tooltip": true,
             "type": "markers"
           },
@@ -138,7 +138,7 @@
                 "color": {
                   "fixed": "dark-green"
                 },
-                "opacity": 0.9,
+                "opacity": 1,
                 "rotation": {
                   "fixed": 0,
                   "max": 360,
@@ -146,7 +146,7 @@
                   "mode": "mod"
                 },
                 "size": {
-                  "fixed": 8,
+                  "fixed": 6,
                   "max": 15,
                   "min": 2
                 },
@@ -176,7 +176,54 @@
               "longitude": "longitude",
               "mode": "coords"
             },
-            "name": "Layer 1",
+            "name": "Posizioni utente",
+            "tooltip": true,
+            "type": "markers"
+          },
+          {
+            "config": {
+              "showLegend": true,
+              "style": {
+                "color": {
+                  "fixed": "dark-red"
+                },
+                "opacity": 1,
+                "rotation": {
+                  "fixed": 0,
+                  "max": 360,
+                  "min": -360,
+                  "mode": "mod"
+                },
+                "size": {
+                  "fixed": 3,
+                  "max": 15,
+                  "min": 2
+                },
+                "symbol": {
+                  "fixed": "img/icons/marker/circle.svg",
+                  "mode": "fixed"
+                },
+                "symbolAlign": {
+                  "horizontal": "center",
+                  "vertical": "center"
+                },
+                "textConfig": {
+                  "fontSize": 12,
+                  "offsetX": 0,
+                  "offsetY": 0,
+                  "textAlign": "center",
+                  "textBaseline": "middle"
+                }
+              }
+            },
+            "filterData": {
+              "id": "byRefId",
+              "options": "C"
+            },
+            "location": {
+              "mode": "auto"
+            },
+            "name": "Attività",
             "tooltip": true,
             "type": "markers"
           }
@@ -227,7 +274,7 @@
           "editorType": "builder",
           "format": 1,
           "pluginVersion": "4.5.1",
-          "rawSql": "SELECT * FROM \"nearyou\".\"positions\" ORDER BY received_at DESC LIMIT 2",
+          "rawSql": "SELECT * FROM \"nearyou\".\"positions\" ORDER BY received_at DESC LIMIT 2", 
           "refId": "A"
         },
         {
@@ -278,6 +325,38 @@
           "pluginVersion": "4.5.1",
           "rawSql": "SELECT longitude, latitude, message FROM \"nearyou\".\"messageTable\" ORDER BY creationTime DESC LIMIT 1",
           "refId": "B"
+        },
+        {
+          "builderOptions": {
+            "aggregates": [],
+            "columns": [
+              {
+                "alias": "*",
+                "custom": false,
+                "name": "*",
+                "type": "String"
+              }
+            ],
+            "database": "nearyou",
+            "filters": [],
+            "groupBy": [],
+            "limit": 1000,
+            "meta": {},
+            "mode": "list",
+            "orderBy": [],
+            "queryType": "table",
+            "table": "attivita"
+          },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "ee5wustcp8zr4b"
+          },
+          "editorType": "builder",
+          "format": 1,
+          "hide": false,
+          "pluginVersion": "4.5.1",
+          "rawSql": "SELECT * FROM \"nearyou\".\"attivita\" LIMIT 1000",
+          "refId": "C"
         }
       ],
       "title": "Mappa",
@@ -301,3 +380,4 @@
   "version": 1,
   "weekStart": ""
 }
+
