@@ -108,8 +108,7 @@ services:
     build: ./SimulatePositions
     # mem_limit: 4G # Limita la memoria a 2GB
     depends_on:
-      kafka:
-        condition: service_healthy
+      - create-topic
 
   flink:
     container_name: flink
@@ -117,6 +116,12 @@ services:
     build: ./FlinkController
     volumes:
       - .env:/app/.env
+    depends_on:
+      - create-topic
+      
+  create-topic:
+    container_name: create-topic
+    build: ./CreateTopic
     depends_on:
       kafka:
         condition: service_healthy
