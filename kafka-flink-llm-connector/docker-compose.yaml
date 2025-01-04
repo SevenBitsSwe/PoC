@@ -82,7 +82,7 @@ services:
   #     - 9000:9000 # Native
 
   clickhouse:
-    image: clickhouse/clickhouse-server:24.10
+    image: clickhouse/clickhouse-server:24.11
     hostname: clickhouse
     container_name: clickhouse
     ports:
