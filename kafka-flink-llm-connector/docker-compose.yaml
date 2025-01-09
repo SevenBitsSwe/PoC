@@ -8,14 +8,21 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - 2181:2181
+    healthcheck:
+      test: nc -z localhost 2181 || exit -1
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   kafka:
     image: confluentinc/cp-kafka:7.6.0
     hostname: kafka
     container_name: kafka
     depends_on:
-      - zookeeper
-      - clickhouse
+      zookeeper:
+        condition: service_healthy
+      clickhouse:
+        condition: service_started
     ports:
       - 29092:29092
     environment:
@@ -27,13 +34,22 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_ADVERTISED_HOST_NAME: "kafka"
+    command:
+      - sh
+      - -c
+      - |
+        # Rimuovi i nodi esistenti di Kafka in Zookeeper
+        echo "deleteall /brokers/ids/1" | /usr/bin/zookeeper-shell zookeeper:2181 || true
+        # Avvia Kafka e crea i topic
+        /etc/confluent/docker/run &
+        kafka-topics --create --topic MessageElaborated --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1
+        kafka-topics --create --topic SimulatorPosition --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1
+        wait
     healthcheck:
       test:
         [
-          "CMD",
-          "kafka-broker-api-versions",
-          "--bootstrap-server",
-          "localhost:29092",
+          "CMD-SHELL",
+          "kafka-topics --bootstrap-server localhost:29092 --list | grep -q 'MessageElaborated' && kafka-topics --bootstrap-server localhost:29092 --list | grep -q 'SimulatorPosition'",
         ]
       interval: 10s
       timeout: 2s
@@ -106,9 +122,10 @@ services:
   positionsimulator:
     container_name: positions
     build: ./SimulatePositions
-    # mem_limit: 4G # Limita la memoria a 2GB
+    # mem_limit: 4G # Limita la memoria a 4GB
     depends_on:
-      - create-topic
+      kafka:
+        condition: service_healthy
 
   flink:
     container_name: flink
@@ -116,12 +133,6 @@ services:
     build: ./FlinkController
     volumes:
       - .env:/app/.env
-    depends_on:
-      - create-topic
-      
-  create-topic:
-    container_name: create-topic
-    build: ./CreateTopic
     depends_on:
       kafka:
         condition: service_healthy
