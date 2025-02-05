@@ -53,7 +53,26 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "C id"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "dettagli",
+                    "url": "http://localhost:3000/d/cec5m2txm1fr4a/new-dashboard?orgId=1&from=now-6h&to=now&timezone=browser&editPanel=1&var-location_id=${__data.fields.id}"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 23,
@@ -239,7 +258,7 @@
           "zoom": 15
         }
       },
-      "pluginVersion": "11.3.1",
+      "pluginVersion": "11.5.1",
       "targets": [
         {
           "builderOptions": {
@@ -274,7 +293,7 @@
           "editorType": "builder",
           "format": 1,
           "pluginVersion": "4.5.1",
-          "rawSql": "SELECT * FROM \"nearyou\".\"positions\" ORDER BY received_at DESC LIMIT 2", 
+          "rawSql": "SELECT * FROM \"nearyou\".\"positions\" ORDER BY received_at DESC LIMIT 2",
           "refId": "A"
         },
         {
@@ -354,7 +373,7 @@
           "editorType": "builder",
           "format": 1,
           "hide": false,
-          "pluginVersion": "4.5.1",
+          "pluginVersion": "4.7.0",
           "rawSql": "SELECT * FROM \"nearyou\".\"attivita\" LIMIT 1000",
           "refId": "C"
         }
@@ -380,4 +399,3 @@
   "version": 1,
   "weekStart": ""
 }
-
