@@ -232,14 +232,16 @@
           "mode": "details"
         },
         "view": {
-          "allLayers": true,
+          "allLayers": false,
           "id": "fit",
+          "lastOnly": false,
           "lat": 45.402748,
+          "layer": "Posizioni utente",
           "lon": 11.86733,
           "zoom": 15
         }
       },
-      "pluginVersion": "11.3.1",
+      "pluginVersion": "11.5.1",
       "targets": [
         {
           "builderOptions": {
@@ -274,7 +276,7 @@
           "editorType": "builder",
           "format": 1,
           "pluginVersion": "4.5.1",
-          "rawSql": "SELECT * FROM \"nearyou\".\"positions\" ORDER BY received_at DESC LIMIT 2", 
+          "rawSql": "SELECT * FROM \"nearyou\".\"positions\" ORDER BY received_at DESC LIMIT 2",
           "refId": "A"
         },
         {
@@ -354,7 +356,7 @@
           "editorType": "builder",
           "format": 1,
           "hide": false,
-          "pluginVersion": "4.5.1",
+          "pluginVersion": "4.8.0",
           "rawSql": "SELECT * FROM \"nearyou\".\"attivita\" LIMIT 1000",
           "refId": "C"
         }
@@ -364,6 +366,7 @@
     }
   ],
   "preload": false,
+  "refresh": "5s",
   "schemaVersion": 40,
   "tags": [],
   "templating": {
@@ -380,4 +383,3 @@
   "version": 1,
   "weekStart": ""
 }
-
