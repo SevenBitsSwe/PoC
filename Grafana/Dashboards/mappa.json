@@ -53,7 +53,26 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "C id"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "dettagli",
+                    "url": "http://localhost:3000/d/cec5m2txm1fr4a/new-dashboard?orgId=1&from=now-6h&to=now&timezone=browser&editPanel=1&var-location_id=${__data.fields.id}"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 23,
@@ -232,11 +251,9 @@
           "mode": "details"
         },
         "view": {
-          "allLayers": false,
+          "allLayers": true,
           "id": "fit",
-          "lastOnly": false,
           "lat": 45.402748,
-          "layer": "Posizioni utente",
           "lon": 11.86733,
           "zoom": 15
         }
@@ -356,7 +373,7 @@
           "editorType": "builder",
           "format": 1,
           "hide": false,
-          "pluginVersion": "4.8.0",
+          "pluginVersion": "4.7.0",
           "rawSql": "SELECT * FROM \"nearyou\".\"attivita\" LIMIT 1000",
           "refId": "C"
         }
@@ -366,7 +383,6 @@
     }
   ],
   "preload": false,
-  "refresh": "5s",
   "schemaVersion": 40,
   "tags": [],
   "templating": {

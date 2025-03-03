@@ -8,14 +8,21 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - 2181:2181
+    healthcheck:
+      test: nc -z localhost 2181 || exit -1
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   kafka:
     image: confluentinc/cp-kafka:7.6.0
     hostname: kafka
     container_name: kafka
     depends_on:
-      - zookeeper
-      - clickhouse
+      zookeeper:
+        condition: service_healthy
+      clickhouse:
+        condition: service_started
     ports:
       - 29092:29092
     environment:
@@ -27,17 +34,27 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_ADVERTISED_HOST_NAME: "kafka"
+    command:
+      - sh
+      - -c
+      - |
+        # Rimuovi i nodi esistenti di Kafka in Zookeeper
+        echo "deleteall /brokers/ids/1" | /usr/bin/zookeeper-shell zookeeper:2181 || true
+        # Avvia Kafka e crea i topic
+        /etc/confluent/docker/run &
+        kafka-topics --create --topic MessageElaborated --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1
+        kafka-topics --create --topic SimulatorPosition --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1
+        wait
     healthcheck:
       test:
         [
-          "CMD",
-          "kafka-broker-api-versions",
-          "--bootstrap-server",
-          "localhost:29092",
+          "CMD-SHELL",
+          "kafka-topics --bootstrap-server localhost:29092 --list | grep -q 'MessageElaborated' && kafka-topics --bootstrap-server localhost:29092 --list | grep -q 'SimulatorPosition'",
         ]
       interval: 10s
-      timeout: 2s
-      retries: 3
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   kafdrop:
     container_name: kafdrop
@@ -60,9 +77,9 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: admin
       GF_INSTALL_PLUGINS: "grafana-clickhouse-datasource" # Plugin ClickHouse
     volumes:
-      - ./grafana/DashboardProv:/etc/grafana/provisioning/dashboards # Configurazione provider dashboard # dashboard.yml
-      - ./grafana/Dashboards:/var/lib/grafana/dashboards # Configurazione dashboard # dashboard.json
-      - ./grafana/DatasourceProv:/etc/grafana/provisioning/datasources # Configurazione datasource # datasources.yml
+      - ./Grafana/DashboardProv:/etc/grafana/provisioning/dashboards # Configurazione provider dashboard # dashboard.yml
+      - ./Grafana/Dashboards:/var/lib/grafana/dashboards # Configurazione dashboard # dashboard.json
+      - ./Grafana/DatasourceProv:/etc/grafana/provisioning/datasources # Configurazione datasource # datasources.yml
 
   # clickhouse:
   #   image: bitnami/clickhouse:latest
@@ -94,7 +111,7 @@ services:
       CLICKHOUSE_PASSWORD: pass # Password per l'utente
       CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 0 # Abilita la gestione accessi
     volumes:
-      - ./Storagedata:/docker-entrypoint-initdb.d
+      - ./StorageData:/docker-entrypoint-initdb.d
 
   # python-script1:
   #   build:
@@ -106,14 +123,13 @@ services:
   positionsimulator:
     container_name: positions
     build: ./SimulatePositions
-    # mem_limit: 4G # Limita la memoria a 2GB
+    # mem_limit: 4G # Limita la memoria a 4GB
     depends_on:
       kafka:
         condition: service_healthy
 
   flink:
     container_name: flink
-
     build: ./FlinkController
     volumes:
       - .env:/app/.env

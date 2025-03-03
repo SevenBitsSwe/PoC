@@ -1,5 +1,0 @@
-geopy
-osmnx
-gpxpy
-confluent_kafka
-scikit-learn
